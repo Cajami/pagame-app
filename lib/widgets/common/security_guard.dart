@@ -13,44 +13,21 @@ class SecurityGuard extends StatefulWidget {
   State<SecurityGuard> createState() => _SecurityGuardState();
 }
 
-class _SecurityGuardState extends State<SecurityGuard> with WidgetsBindingObserver {
+class _SecurityGuardState extends State<SecurityGuard> {
   final LocalAuthentication _auth = LocalAuthentication();
   bool _isAuthenticated = false;
   bool _isChecking = true;
   bool _isAuthenticating = false; // Flag to prevent concurrent biometric prompts
-  bool _shouldPromptOnResume = false; // Flag to track if we should auto-authenticate on next resume
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _authenticate();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      // If the app was authenticated before going to background, we lock it and mark it to prompt on resume.
-      if (_isAuthenticated) {
-        setState(() {
-          _isAuthenticated = false;
-          _shouldPromptOnResume = true;
-        });
-      }
-    }
-
-    if (state == AppLifecycleState.resumed) {
-      if (_shouldPromptOnResume) {
-        _shouldPromptOnResume = false;
-        _authenticate();
-      }
-    }
   }
 
   Future<void> _authenticate() async {

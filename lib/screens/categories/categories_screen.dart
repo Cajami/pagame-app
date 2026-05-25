@@ -352,10 +352,6 @@ class _CategoriesEmptyState extends StatelessWidget {
             children: const [
               _InfoChip(icon: Icons.calendar_month_outlined, text: 'Mensuales'),
               _InfoChip(icon: Icons.receipt_long_outlined, text: 'Pago único'),
-              _InfoChip(
-                icon: Icons.notifications_active_outlined,
-                text: 'Recordatorios',
-              ),
             ],
           ),
           const SizedBox(height: 30),
