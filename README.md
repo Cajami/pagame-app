@@ -1,6 +1,6 @@
 # Págame
 
-Págame es una aplicación móvil (enfocada en Android) que desarrollé para registrar pagos recurrentes y únicos, adjuntar comprobantes físicos y gestionar recordatorios de fechas de vencimiento.
+Págame es una aplicación móvil que desarrollé para registrar pagos recurrentes y únicos, adjuntar comprobantes físicos y gestionar recordatorios de fechas de vencimiento.
 
 ## 📱 Descarga e Instala en tu Android (Prueba Rápida)
 
@@ -27,7 +27,10 @@ Págame es una aplicación móvil (enfocada en Android) que desarrollé para reg
 
 ## 🖼️ Capturas de Pantalla / Imágenes
 
-*(Próximamente añadiré aquí las imágenes y capturas de pantalla del funcionamiento de la aplicación móvil)*
+<img width="610" height="1356" alt="WhatsApp Image 2026-05-25 at 07 55 45 (2)" src="https://github.com/user-attachments/assets/c9a44325-97ee-438d-be92-0f2e6db16c1d" />
+<img width="610" height="1356" alt="WhatsApp Image 2026-05-25 at 07 55 45 (1)" src="https://github.com/user-attachments/assets/2155a865-7eea-4cae-8a68-08d7ae64f52b" />
+<img width="610" height="1356" alt="WhatsApp Image 2026-05-25 at 07 55 45" src="https://github.com/user-attachments/assets/eb87da84-afe0-4054-8998-c32980fb0afe" />
+<img width="610" height="1356" alt="WhatsApp Image 2026-05-25 at 07 55 44" src="https://github.com/user-attachments/assets/617eea6a-8810-490e-8ed6-f5ef9c27b927" />
 
 ---
 
