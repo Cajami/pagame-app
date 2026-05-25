@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:pagame/main.dart';
+import 'package:pagame/app.dart';
 
 void main() {
   testWidgets('shows empty categories state', (WidgetTester tester) async {
     await tester.pumpWidget(const PagameApp());
 
     expect(find.text('Págame'), findsOneWidget);
-    expect(find.text('Aún no tienes categorías'), findsOneWidget);
-    expect(find.text('Crear primera categoría'), findsOneWidget);
+    expect(find.text('Tus categorías están vacías'), findsOneWidget);
+    expect(find.text('Crear categoría'), findsOneWidget);
     expect(find.text('Nueva categoría'), findsNothing);
   });
 
   testWidgets('creates a category from the form', (WidgetTester tester) async {
     await tester.pumpWidget(const PagameApp());
 
-    await tester.tap(find.text('Crear primera categoría'));
+    await tester.tap(find.text('Crear categoría'));
     await tester.pumpAndSettle();
 
     expect(find.text('Nueva categoría'), findsAtLeastNWidgets(1));
@@ -27,8 +27,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Streaming'), findsOneWidget);
-    expect(find.text('Aún no tienes categorías'), findsNothing);
-    expect(find.text('Nueva categoría'), findsOneWidget);
+    expect(find.text('Tus categorías están vacías'), findsNothing);
+    expect(find.text('Crear categoría'), findsOneWidget);
   });
 
   testWidgets('creates Prime Video service inside category', (
@@ -36,7 +36,7 @@ void main() {
   ) async {
     await tester.pumpWidget(const PagameApp());
 
-    await tester.tap(find.text('Crear primera categoría'));
+    await tester.tap(find.text('Crear categoría'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).first, 'Streaming');
     await tester.tap(find.text('Guardar categoría'));
@@ -45,8 +45,8 @@ void main() {
     await tester.tap(find.text('Streaming'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Aún no tienes servicios'), findsOneWidget);
-    await tester.tap(find.text('Crear primer servicio'));
+    expect(find.text('Sin servicios en esta categoría'), findsOneWidget);
+    await tester.tap(find.text('Crear servicio'));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextFormField).first, 'Prime Video');
@@ -54,7 +54,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Prime Video'), findsOneWidget);
-    expect(find.text('Aún no tienes servicios'), findsNothing);
+    expect(find.text('Sin servicios en esta categoría'), findsNothing);
   });
 
   testWidgets('creates year and month inside a service', (
@@ -62,7 +62,7 @@ void main() {
   ) async {
     await tester.pumpWidget(const PagameApp());
 
-    await tester.tap(find.text('Crear primera categoría'));
+    await tester.tap(find.text('Crear categoría'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).first, 'Streaming');
     await tester.tap(find.text('Guardar categoría'));
@@ -70,7 +70,7 @@ void main() {
 
     await tester.tap(find.text('Streaming'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Crear primer servicio'));
+    await tester.tap(find.text('Crear servicio'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).first, 'Prime Video');
     await tester.tap(find.text('Guardar servicio'));
@@ -79,8 +79,8 @@ void main() {
     await tester.tap(find.text('Prime Video'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Aún no tienes años'), findsOneWidget);
-    await tester.tap(find.text('Crear primer año'));
+    expect(find.text('Sin años registrados'), findsOneWidget);
+    await tester.tap(find.text('Crear año'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Agregar año'));
     await tester.pumpAndSettle();
@@ -95,13 +95,13 @@ void main() {
     await tester.tap(yearFinder.first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Aún no tienes meses'), findsOneWidget);
-    await tester.tap(find.text('Crear primer mes'));
+    expect(find.text('Sin meses registrados'), findsOneWidget);
+    await tester.tap(find.text('Crear mes'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Agregar mes'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Aún no tienes meses'), findsNothing);
+    expect(find.text('Sin meses registrados'), findsNothing);
   });
 
   testWidgets('creates payment inside selected month', (
@@ -109,7 +109,7 @@ void main() {
   ) async {
     await tester.pumpWidget(const PagameApp());
 
-    await tester.tap(find.text('Crear primera categoría'));
+    await tester.tap(find.text('Crear categoría'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).first, 'Streaming');
     await tester.tap(find.text('Guardar categoría'));
@@ -117,7 +117,7 @@ void main() {
 
     await tester.tap(find.text('Streaming'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Crear primer servicio'));
+    await tester.tap(find.text('Crear servicio'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).first, 'Prime Video');
     await tester.tap(find.text('Guardar servicio'));
@@ -125,7 +125,7 @@ void main() {
 
     await tester.tap(find.text('Prime Video'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Crear primer año'));
+    await tester.tap(find.text('Crear año'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Agregar año'));
     await tester.pumpAndSettle();
@@ -138,7 +138,7 @@ void main() {
     await tester.tap(yearFinder.first);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Crear primer mes'));
+    await tester.tap(find.text('Crear mes'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Agregar mes'));
     await tester.pumpAndSettle();
@@ -147,8 +147,8 @@ void main() {
     await tester.tap(find.text('Sin pagos registrados'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Aún no tienes pagos'), findsOneWidget);
-    await tester.tap(find.text('Crear primer pago'));
+    expect(find.text('Sin pagos este mes'), findsOneWidget);
+    await tester.tap(find.text('Registrar pago'));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextFormField).first, '35.90');

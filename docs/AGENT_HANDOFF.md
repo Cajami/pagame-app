@@ -127,8 +127,8 @@ Suggested scope:
 
 After Screen 2 implementation, run:
 
-- `D:\flutter\bin\flutter.bat analyze`
-- `D:\flutter\bin\flutter.bat test`
+- `flutter analyze`
+- `flutter test`
 - Manual run in Chrome or Windows.
 
 ## 9) File Map (Important)

@@ -10,10 +10,10 @@ Pagame is a Flutter app (Android-first) to register recurring and one-time payme
 
 ## Quick Run
 
-Use Flutter binary configured by the team:
+Use Flutter from PATH:
 
-- `D:\flutter\bin\flutter.bat pub get`
-- `D:\flutter\bin\flutter.bat analyze`
-- `D:\flutter\bin\flutter.bat test`
-- `D:\flutter\bin\flutter.bat run -d windows`
-- `D:\flutter\bin\flutter.bat run -d chrome`
+- `flutter pub get`
+- `flutter analyze`
+- `flutter test`
+- `flutter run -d windows`
+- `flutter run -d chrome`
