@@ -1,10 +1,10 @@
-# Pagame
+# Págame
 
-Pagame is a Flutter app (Android-first) to register recurring and one-time payments, attach proof files, and manage due/overdue reminders.
+Págame es una aplicación móvil (enfocada en Android) que desarrollé para registrar pagos recurrentes y únicos, adjuntar comprobantes físicos y gestionar recordatorios de fechas de vencimiento.
 
 ## 📱 Descarga e Instala en tu Android (Prueba Rápida)
 
-¡Ya puedes probar la versión de producción directamente en tu teléfono Android! Hemos preparado el instalador APK optimizado y listo para usar:
+¡Ya puedes probar la versión de producción directamente en tu teléfono Android! Preparé el instalador APK optimizado y listo para usar:
 
 1. **Descarga el archivo APK**:
    👉 [**Descargar Págame APK (Última Versión)**](release/pagame.apk?raw=true)
@@ -18,18 +18,36 @@ Pagame is a Flutter app (Android-first) to register recurring and one-time payme
 
 ---
 
-## Project Docs
+## 💾 Almacenamiento Local y Sincronización en la Nube
 
-- Main handoff for any coding agent: [docs/AGENT_HANDOFF.md](docs/AGENT_HANDOFF.md)
-- MVP functional plan: [docs/PLAN_MVP_PAGAME.md](docs/PLAN_MVP_PAGAME.md)
-- Additional MVP summary: [PLAN_MVP.md](PLAN_MVP.md)
+* **Estado Actual**: Por motivos de privacidad y seguridad, toda tu información, historial de pagos y archivos adjuntos (fotos y PDFs) se guardan de forma **100% local y segura** en el almacenamiento interno de tu propio dispositivo utilizando una base de datos SQLite.
+* **Próximamente**: Agregaré la sincronización automática en la nube utilizando Google Drive para que puedas respaldar y restaurar tus datos en múltiples dispositivos sin complicaciones. Por ahora, puedes usar la función de **"Exportar datos y archivos"** desde los Ajustes para generar una copia de seguridad manual en un archivo ZIP.
 
-## Quick Run
+---
 
-Use Flutter from PATH:
+## 🖼️ Capturas de Pantalla / Imágenes
 
-- `flutter pub get`
-- `flutter analyze`
-- `flutter test`
-- `flutter run -d windows`
-- `flutter run -d chrome`
+*(Próximamente añadiré aquí las imágenes y capturas de pantalla del funcionamiento de la aplicación móvil)*
+
+---
+
+## 🚀 Ejecución Rápida (Para Desarrolladores)
+
+Si deseas ejecutar el proyecto en tu entorno local, asegúrate de tener Flutter configurado en tu PATH y ejecuta los siguientes comandos:
+
+* Instalar dependencias:
+  ```bash
+  flutter pub get
+  ```
+* Analizar código:
+  ```bash
+  flutter analyze
+  ```
+* Ejecutar pruebas unitarias:
+  ```bash
+  flutter test
+  ```
+* Ejecutar en modo desarrollo:
+  ```bash
+  flutter run
+  ```
