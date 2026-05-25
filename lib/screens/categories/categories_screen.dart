@@ -7,6 +7,7 @@ import 'package:pagame/utils/database_helper.dart';
 import 'package:pagame/widgets/common/app_background.dart';
 import 'package:pagame/widgets/sheets/create_category_sheet.dart';
 import 'package:pagame/utils/backup_helper.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -577,6 +578,17 @@ class _SettingsTabState extends StatefulWidget {
 class _SettingsTabStateState extends State<_SettingsTabState> {
   bool _isProcessing = false;
 
+  Future<void> _launchURL(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint('Could not launch $urlString: $e');
+    }
+  }
+
   Future<void> _handleExport() async {
     setState(() {
       _isProcessing = true;
@@ -866,6 +878,127 @@ class _SettingsTabStateState extends State<_SettingsTabState> {
                       ),
                     ],
                   ),
+              ],
+            ),
+          ),
+          
+          // Card 4: Developer Credits
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.border),
+              boxShadow: AppColors.cardShadow,
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0x1A18C1B5),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.terminal_rounded,
+                        color: AppColors.accent,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Desarrollador',
+                            style: TextStyle(
+                              color: AppColors.inkMuted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'JavierSoft',
+                            style: TextStyle(
+                              color: AppColors.ink,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Divider(color: AppColors.border, height: 1),
+                const SizedBox(height: 16),
+                // GitHub Button
+                InkWell(
+                  onTap: () => _launchURL('https://github.com/cajami'),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.code_rounded, color: AppColors.inkSoft, size: 18),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'github.com/cajami',
+                            style: TextStyle(
+                              color: AppColors.inkSoft,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.open_in_new_rounded, color: AppColors.inkMuted, size: 14),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Email Button
+                InkWell(
+                  onTap: () => _launchURL('mailto:javier2315@gmail.com'),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.alternate_email_rounded, color: AppColors.inkSoft, size: 18),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'javier2315@gmail.com',
+                            style: TextStyle(
+                              color: AppColors.inkSoft,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.open_in_new_rounded, color: AppColors.inkMuted, size: 14),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
