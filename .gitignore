@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Sensitive digital signature folders
+/firma_digital/
+
+# Android build directory
+/android/build/
