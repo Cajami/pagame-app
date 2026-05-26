@@ -56,7 +56,10 @@ class _MonthPaymentsScreenState extends State<MonthPaymentsScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const CreatePaymentSheet(),
+      builder: (context) => CreatePaymentSheet(
+        serviceId: widget.service.id,
+        serviceName: widget.service.name,
+      ),
     );
 
     if (!mounted || payment == null) {
@@ -92,7 +95,11 @@ class _MonthPaymentsScreenState extends State<MonthPaymentsScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CreatePaymentSheet(paymentToEdit: payment),
+      builder: (context) => CreatePaymentSheet(
+        serviceId: widget.service.id,
+        serviceName: widget.service.name,
+        paymentToEdit: payment,
+      ),
     );
 
     if (!mounted || updatedPayment == null) {

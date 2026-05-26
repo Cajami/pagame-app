@@ -384,4 +384,67 @@ class DatabaseHelper {
     final db = await database;
     return await db.query('pagos');
   }
+
+  /// Returns a unique list of attachment file paths for a specific service,
+  /// ordered chronologically (newest payments first).
+  Future<List<String>> getUniqueAttachmentsForService(String serviceId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT p.adjuntos, p.fecha_pago
+      FROM pagos p
+      INNER JOIN meses m ON p.mes_id = m.id
+      INNER JOIN anios a ON m.anio_id = a.id
+      WHERE a.servicio_id = ?
+      ORDER BY p.fecha_pago DESC
+    ''', [serviceId]);
+
+    final Set<String> uniquePaths = {};
+    final List<String> orderedPaths = [];
+
+    for (final map in maps) {
+      final adjuntosRaw = map['adjuntos'] as String?;
+      if (adjuntosRaw != null && adjuntosRaw.isNotEmpty) {
+        try {
+          final List<dynamic> paths = jsonDecode(adjuntosRaw) as List;
+          for (final path in paths) {
+            final pathStr = path as String;
+            if (pathStr.isNotEmpty && uniquePaths.add(pathStr)) {
+              orderedPaths.add(pathStr);
+            }
+          }
+        } catch (_) {}
+      }
+    }
+    return orderedPaths;
+  }
+
+  /// Returns a unique list of all attachment file paths in the entire app,
+  /// ordered chronologically (newest payments first).
+  Future<List<String>> getAllUniqueAttachments() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT adjuntos, fecha_pago
+      FROM pagos
+      ORDER BY fecha_pago DESC
+    ''');
+
+    final Set<String> uniquePaths = {};
+    final List<String> orderedPaths = [];
+
+    for (final map in maps) {
+      final adjuntosRaw = map['adjuntos'] as String?;
+      if (adjuntosRaw != null && adjuntosRaw.isNotEmpty) {
+        try {
+          final List<dynamic> paths = jsonDecode(adjuntosRaw) as List;
+          for (final path in paths) {
+            final pathStr = path as String;
+            if (pathStr.isNotEmpty && uniquePaths.add(pathStr)) {
+              orderedPaths.add(pathStr);
+            }
+          }
+        } catch (_) {}
+      }
+    }
+    return orderedPaths;
+  }
 }

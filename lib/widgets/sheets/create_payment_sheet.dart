@@ -5,10 +5,18 @@ import 'package:image_picker/image_picker.dart';
 import 'package:pagame/models/payment_record.dart';
 import 'package:pagame/theme/app_colors.dart';
 import 'package:pagame/utils/date_utils.dart';
+import 'package:pagame/widgets/sheets/select_existing_attachment_sheet.dart';
 
 class CreatePaymentSheet extends StatefulWidget {
-  const CreatePaymentSheet({super.key, this.paymentToEdit});
+  const CreatePaymentSheet({
+    super.key,
+    required this.serviceId,
+    required this.serviceName,
+    this.paymentToEdit,
+  });
 
+  final String serviceId;
+  final String serviceName;
   final PaymentRecord? paymentToEdit;
 
   @override
@@ -114,6 +122,28 @@ class _CreatePaymentSheetState extends State<CreatePaymentSheet> {
     } catch (e) {
       debugPrint('Error taking photo: $e');
     }
+  }
+
+  Future<void> _selectExistingAttachment() async {
+    final selectedPath = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SelectExistingAttachmentSheet(
+        serviceId: widget.serviceId,
+        serviceName: widget.serviceName,
+      ),
+    );
+
+    if (!mounted || selectedPath == null || selectedPath.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      if (!_attachments.contains(selectedPath)) {
+        _attachments.add(selectedPath);
+      }
+    });
   }
 
   void _removeAttachment(String path) {
@@ -342,23 +372,64 @@ class _CreatePaymentSheetState extends State<CreatePaymentSheet> {
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: OutlinedButton(
                           onPressed: _pickAttachments,
-                          icon: const Icon(Icons.attach_file_rounded),
-                          label: const Text(
-                            'Adjuntar\narchivo',
-                            textAlign: TextAlign.center,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                          child: const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.attach_file_rounded, size: 20),
+                              SizedBox(height: 4),
+                              Text(
+                                'Adjuntar',
+                                style: TextStyle(fontSize: 11),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: OutlinedButton(
                           onPressed: _takePhoto,
-                          icon: const Icon(Icons.camera_alt_rounded),
-                          label: const Text(
-                            'Tomar\nfoto',
-                            textAlign: TextAlign.center,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                          child: const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.camera_alt_rounded, size: 20),
+                              SizedBox(height: 4),
+                              Text(
+                                'Tomar foto',
+                                style: TextStyle(fontSize: 11),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _selectExistingAttachment,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                          child: const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.photo_library_rounded, size: 20),
+                              SizedBox(height: 4),
+                              Text(
+                                'Existente',
+                                style: TextStyle(fontSize: 11),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
                         ),
                       ),
