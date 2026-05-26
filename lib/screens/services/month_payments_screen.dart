@@ -266,7 +266,26 @@ class _MonthPaymentsScreenState extends State<MonthPaymentsScreen> {
     return Scaffold(
       appBar: AppBar(
         flexibleSpace: const HeaderBackground(),
-        title: Text('$monthNameValue ${widget.year}'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                widget.service.name,
+                overflow: TextOverflow.ellipsis,
+                textDirection: TextDirection.rtl,
+              ),
+            ),
+            Text(' - $monthNameValue ${widget.year}'),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home_rounded),
+            tooltip: 'Volver al Inicio',
+            onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+          ),
+        ],
       ),
       floatingActionButton: !_isLoading && payments.isNotEmpty
           ? FloatingActionButton.extended(

@@ -193,6 +193,13 @@ class _CategoryServicesScreenState extends State<CategoryServicesScreen> {
       appBar: AppBar(
         flexibleSpace: const HeaderBackground(),
         title: Text(widget.category.name),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home_rounded),
+            tooltip: 'Volver al Inicio',
+            onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+          ),
+        ],
       ),
       floatingActionButton: _services.isNotEmpty
           ? FloatingActionButton.extended(
