@@ -18,6 +18,19 @@ Págame es una aplicación móvil que desarrollé para registrar pagos recurrent
 
 ---
 
+## ⭐ Características Destacadas (Features)
+
+* **🔐 Seguridad Biométrica Nativa**: Bloqueo inteligente con huella dactilar o PIN del dispositivo para proteger tu privacidad al abrir la aplicación o reanudarla desde segundo plano.
+* **📈 Estadísticas Avanzadas e Historial**: Panel analítico con gráfico de dona para distribución de gastos por categoría, e historial interactivo de consumo desplazable (gráfico de barras y tendencia) filtrable por año y moneda.
+* **🔔 Recordatorios Offline Dinámicos**: Notificaciones locales automáticas programadas en el sistema operativo, adaptadas a ciclos mensuales (fin de mes) y quincenales (días 10 y 15). Se autocancelan de forma inteligente al registrar el pago del mes actual.
+* **📸 Galería Inteligente de Recibos**: Toma fotos directamente desde la cámara, elije archivos de la galería o **reutiliza comprobantes** previamente guardados en otros pagos para ahorrar almacenamiento en tu móvil.
+* **💱 Formateador Decimal ATM y Multimoneda**: Registro ágil con teclado inteligente de tipo ATM (base `0.00`) y selector premium de divisas: Soles (`S/`) y Dólares (`$`) con filtrado independiente.
+* **🌓 Modo Oscuro Reactivo**: Alternancia instantánea de tema (claro/oscuro) con diseño premium de alta fidelidad que se guarda en la configuración persistente.
+* **📂 Copias de Seguridad en un ZIP**: Exporta toda la base de datos SQLite y los recibos físicos en un solo archivo comprimido ZIP para compartir. Importador robusto y retrocompatible con sanitización de columnas obsoletas.
+* **🗂️ Ordenamiento Alfabético Inteligente**: Organización reactiva alfabética de categorías y servicios para una navegación fluida, acompañada de iconos dinámicos según el tipo de cobro.
+
+---
+
 ## 💾 Almacenamiento Local y Sincronización en la Nube
 
 * **Estado Actual**: Por motivos de privacidad y seguridad, toda tu información, historial de pagos y archivos adjuntos (fotos y PDFs) se guardan de forma **100% local y segura** en el almacenamiento interno de tu propio dispositivo utilizando una base de datos SQLite.
