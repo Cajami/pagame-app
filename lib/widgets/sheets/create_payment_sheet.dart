@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pagame/models/payment_record.dart';
 import 'package:pagame/theme/app_colors.dart';
@@ -31,19 +32,22 @@ class _CreatePaymentSheetState extends State<CreatePaymentSheet> {
 
   late String _status;
   late DateTime _paymentDate;
+  late String _moneda;
 
   @override
   void initState() {
     super.initState();
+    _status = 'Pagado';
     if (widget.paymentToEdit != null) {
-      _amountController.text = widget.paymentToEdit!.amount?.toString() ?? '';
+      final amt = widget.paymentToEdit!.amount;
+      _amountController.text = amt != null ? amt.toStringAsFixed(2) : '';
       _notesController.text = widget.paymentToEdit!.notes ?? '';
-      _status = widget.paymentToEdit!.status;
       _paymentDate = widget.paymentToEdit!.paymentDate;
       _attachments.addAll(widget.paymentToEdit!.attachments);
+      _moneda = widget.paymentToEdit!.moneda;
     } else {
-      _status = 'Pagado';
       _paymentDate = DateTime.now();
+      _moneda = 'PEN';
     }
   }
 
@@ -55,21 +59,25 @@ class _CreatePaymentSheetState extends State<CreatePaymentSheet> {
   }
 
   Future<void> _pickDate() async {
-    final selected = await showDatePicker(
+    FocusScope.of(context).unfocus();
+    final now = DateTime.now();
+    final selectedDate = await showDatePicker(
       context: context,
-      initialDate: _paymentDate,
+      initialDate: _paymentDate.isAfter(now) ? now : _paymentDate,
       firstDate: DateTime(2025, 1, 1),
-      lastDate: DateTime(2035, 12, 31),
+      lastDate: now,
     );
 
-    if (selected != null) {
+    if (selectedDate != null) {
       setState(() {
-        _paymentDate = selected;
+        _paymentDate = selectedDate;
       });
     }
   }
 
   Future<void> _pickAttachments() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    FocusScope.of(context).requestFocus(FocusNode());
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.custom,
@@ -106,6 +114,8 @@ class _CreatePaymentSheetState extends State<CreatePaymentSheet> {
   }
 
   Future<void> _takePhoto() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    FocusScope.of(context).requestFocus(FocusNode());
     try {
       final picker = ImagePicker();
       final XFile? photo = await picker.pickImage(
@@ -125,6 +135,8 @@ class _CreatePaymentSheetState extends State<CreatePaymentSheet> {
   }
 
   Future<void> _selectExistingAttachment() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    FocusScope.of(context).requestFocus(FocusNode());
     final selectedPath = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -163,7 +175,12 @@ class _CreatePaymentSheetState extends State<CreatePaymentSheet> {
     }
 
     final amountText = _amountController.text.trim();
-    final amount = amountText.isEmpty ? null : double.parse(amountText);
+    final amount = double.parse(amountText);
+
+    final notesText = _notesController.text.trim();
+    final capitalizedNotes = notesText.isNotEmpty
+        ? '${notesText[0].toUpperCase()}${notesText.substring(1)}'
+        : null;
 
     Navigator.of(context).pop(
       PaymentRecord(
@@ -171,10 +188,9 @@ class _CreatePaymentSheetState extends State<CreatePaymentSheet> {
         status: _status,
         amount: amount,
         paymentDate: _paymentDate,
-        notes: _notesController.text.trim().isEmpty
-            ? null
-            : _notesController.text.trim(),
+        notes: capitalizedNotes,
         attachments: List<String>.from(_attachments),
+        moneda: _moneda,
       ),
     );
   }
@@ -199,7 +215,7 @@ class _CreatePaymentSheetState extends State<CreatePaymentSheet> {
               ? Image.file(
                   File(path),
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const Center(
+                  errorBuilder: (context, error, stackTrace) => Center(
                     child: Icon(
                       Icons.image_not_supported_outlined,
                       color: AppColors.inkMuted,
@@ -220,7 +236,7 @@ class _CreatePaymentSheetState extends State<CreatePaymentSheet> {
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
                           fileName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 8,
                             color: AppColors.ink,
                             fontWeight: FontWeight.bold,
@@ -302,50 +318,92 @@ class _CreatePaymentSheetState extends State<CreatePaymentSheet> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  DropdownButtonFormField<String>(
-                    initialValue: _status,
-                    dropdownColor: AppColors.card,
-                    style: const TextStyle(color: AppColors.ink),
-                    decoration: const InputDecoration(labelText: 'Estado'),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'Pendiente',
-                        child: Text('Pendiente'),
+
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: TextFormField(
+                          controller: _amountController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            AtmAmountFormatter(),
+                          ],
+                          decoration: const InputDecoration(
+                            labelText: 'Monto',
+                            hintText: '0.00',
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty || value == '0.00') {
+                              return 'El monto es obligatorio';
+                            }
+                            final amount = double.tryParse(value);
+                            if (amount == null || amount <= 0) {
+                              return 'Ingresa un monto válido';
+                            }
+                            return null;
+                          },
+                        ),
                       ),
-                      DropdownMenuItem(value: 'Pagado', child: Text('Pagado')),
-                      DropdownMenuItem(
-                        value: 'Vencido',
-                        child: Text('Vencido'),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: Container(
+                          height: 56,
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.card,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _moneda = 'PEN'),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: _moneda == 'PEN' ? AppColors.accent : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      'S/',
+                                      style: TextStyle(
+                                        color: _moneda == 'PEN' ? AppColors.accentDark : AppColors.inkMuted,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _moneda = 'USD'),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: _moneda == 'USD' ? AppColors.accent : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '\$',
+                                      style: TextStyle(
+                                        color: _moneda == 'USD' ? AppColors.accentDark : AppColors.inkMuted,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          _status = value;
-                        });
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'Monto (opcional)',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return null;
-                      }
-
-                      final amount = double.tryParse(value);
-                      if (amount == null || amount < 0) {
-                        return 'Ingresa un monto válido';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 16),
                   InkWell(
@@ -356,7 +414,7 @@ class _CreatePaymentSheetState extends State<CreatePaymentSheet> {
                       ),
                       child: Text(
                         formatDate(_paymentDate),
-                        style: const TextStyle(color: AppColors.ink),
+                        style: TextStyle(color: AppColors.ink),
                       ),
                     ),
                   ),
@@ -364,6 +422,18 @@ class _CreatePaymentSheetState extends State<CreatePaymentSheet> {
                   TextFormField(
                     controller: _notesController,
                     maxLines: 2,
+                    maxLength: 100,
+                    textCapitalization: TextCapitalization.sentences,
+                    buildCounter: (context, {required currentLength, required isFocused, maxLength}) {
+                      return Text(
+                        '$currentLength de $maxLength',
+                        style: TextStyle(
+                          color: AppColors.inkMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      );
+                    },
                     decoration: const InputDecoration(
                       labelText: 'Notas (opcional)',
                     ),
@@ -465,6 +535,38 @@ class _CreatePaymentSheetState extends State<CreatePaymentSheet> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class AtmAmountFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return const TextEditingValue(
+        text: '',
+        selection: TextSelection.collapsed(offset: 0),
+      );
+    }
+
+    final onlyDigits = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (onlyDigits.isEmpty) {
+      return const TextEditingValue(
+        text: '',
+        selection: TextSelection.collapsed(offset: 0),
+      );
+    }
+
+    final cents = double.parse(onlyDigits);
+    final amount = cents / 100.0;
+    final formatted = amount.toStringAsFixed(2);
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

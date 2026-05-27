@@ -21,7 +21,6 @@ class _CreateServiceSheetState extends State<CreateServiceSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
 
-  late String _type;
   late String _billingCycle;
 
   @override
@@ -29,12 +28,14 @@ class _CreateServiceSheetState extends State<CreateServiceSheet> {
     super.initState();
     if (widget.serviceToEdit != null) {
       _nameController.text = widget.serviceToEdit!.name;
-      _type = widget.serviceToEdit!.type;
       _billingCycle = widget.serviceToEdit!.billingCycle == 'Sin vencimiento'
           ? 'Fin de mes'
           : widget.serviceToEdit!.billingCycle;
+      // Handle backward compatibility for old "Quincena (día 15)" values
+      if (_billingCycle.contains('Quincena')) {
+        _billingCycle = 'Quincena';
+      }
     } else {
-      _type = 'Mensual';
       _billingCycle = 'Fin de mes';
     }
   }
@@ -50,15 +51,15 @@ class _CreateServiceSheetState extends State<CreateServiceSheet> {
       return;
     }
 
-    final billingCycle = _type == 'Único' ? 'Sin vencimiento' : _billingCycle;
+    final name = _nameController.text.trim();
+    final capitalizedName = name.isNotEmpty ? '${name[0].toUpperCase()}${name.substring(1)}' : name;
 
     Navigator.of(context).pop(
       ServiceItem(
         id: widget.serviceToEdit?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
         categoryId: widget.categoryId,
-        name: _nameController.text.trim(),
-        type: _type,
-        billingCycle: billingCycle,
+        name: capitalizedName,
+        billingCycle: _billingCycle,
         monthsByYear: widget.serviceToEdit?.monthsByYear ?? <int, Set<int>>{},
         paymentsByPeriod: widget.serviceToEdit?.paymentsByPeriod ?? <String, List<PaymentRecord>>{},
       ),
@@ -120,6 +121,7 @@ class _CreateServiceSheetState extends State<CreateServiceSheet> {
                   TextFormField(
                     controller: _nameController,
                     textInputAction: TextInputAction.next,
+                    textCapitalization: TextCapitalization.sentences,
                     decoration: const InputDecoration(
                       labelText: 'Nombre del servicio',
                     ),
@@ -132,75 +134,31 @@ class _CreateServiceSheetState extends State<CreateServiceSheet> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    initialValue: _type,
+                    initialValue: _billingCycle,
                     dropdownColor: AppColors.card,
-                    style: const TextStyle(color: AppColors.ink),
+                    style: TextStyle(color: AppColors.ink),
                     decoration: const InputDecoration(
-                      labelText: 'Tipo de servicio',
+                      labelText: 'Frecuencia de cobro',
                     ),
                     items: const [
                       DropdownMenuItem(
-                        value: 'Mensual',
-                        child: Text('Mensual'),
+                        value: 'Quincena',
+                        child: Text('Quincena'),
                       ),
-                      DropdownMenuItem(value: 'Único', child: Text('Único')),
+                      DropdownMenuItem(
+                        value: 'Fin de mes',
+                        child: Text('Fin de mes'),
+                      ),
                     ],
                     onChanged: (value) {
                       if (value == null) {
                         return;
                       }
                       setState(() {
-                        _type = value;
+                        _billingCycle = value;
                       });
                     },
                   ),
-                  const SizedBox(height: 16),
-                  if (_type == 'Mensual')
-                    DropdownButtonFormField<String>(
-                      initialValue: _billingCycle,
-                      dropdownColor: AppColors.card,
-                      style: const TextStyle(color: AppColors.ink),
-                      decoration: const InputDecoration(
-                        labelText: 'Frecuencia de cobro',
-                      ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'Quincena (día 15)',
-                          child: Text('Quincena (día 15)'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Fin de mes',
-                          child: Text('Fin de mes'),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        if (value == null) {
-                          return;
-                        }
-                        setState(() {
-                          _billingCycle = value;
-                        });
-                      },
-                    )
-                  else
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.card,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Text(
-                        'Servicio único: sin vencimiento mensual',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.inkSoft,
-                        ),
-                      ),
-                    ),
                   const SizedBox(height: 26),
                   SizedBox(
                     width: double.infinity,

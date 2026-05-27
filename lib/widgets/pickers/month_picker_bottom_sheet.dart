@@ -2,10 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:pagame/theme/app_colors.dart';
 import 'package:pagame/utils/date_utils.dart';
 
-Future<int?> showMonthPicker(BuildContext context) async {
+Future<int?> showMonthPicker(BuildContext context, {List<int> existingMonths = const []}) async {
   const months = <int>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   final current = DateTime.now().month;
-  int selectedMonth = current;
+
+  // Default to current month if not added, otherwise perform a circular forward search
+  int defaultMonth = current;
+  if (existingMonths.contains(current)) {
+    for (int i = 1; i <= 12; i++) {
+      final candidate = (current + i - 1) % 12 + 1;
+      if (!existingMonths.contains(candidate)) {
+        defaultMonth = candidate;
+        break;
+      }
+    }
+  }
+  int selectedMonth = defaultMonth;
 
   return showModalBottomSheet<int>(
     context: context,
@@ -17,6 +29,8 @@ Future<int?> showMonthPicker(BuildContext context) async {
 
       return StatefulBuilder(
         builder: (context, setModalState) {
+          final isCurrentMonthExisting = existingMonths.contains(selectedMonth);
+
           return Container(
             decoration: BoxDecoration(
               color: AppColors.surfaceHigh,
@@ -71,19 +85,25 @@ Future<int?> showMonthPicker(BuildContext context) async {
                         childCount: months.length,
                         builder: (context, index) {
                           final month = months[index];
+                          final isExisting = existingMonths.contains(month);
                           final selected = month == selectedMonth;
+
+                          Color textColor = AppColors.inkMuted;
+                          if (isExisting) {
+                            textColor = AppColors.inkMuted.withValues(alpha: 0.35);
+                          } else if (selected) {
+                            textColor = AppColors.accent;
+                          }
+
                           return Center(
                             child: Text(
-                              monthName(month),
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    color: selected
-                                        ? AppColors.accent
-                                        : AppColors.inkMuted,
-                                    fontWeight: selected
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                  ),
+                              isExisting ? '${monthName(month)} (Ya agregado)' : monthName(month),
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: textColor,
+                                fontWeight: selected && !isExisting
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
                             ),
                           );
                         },
@@ -94,7 +114,7 @@ Future<int?> showMonthPicker(BuildContext context) async {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                      onPressed: () => Navigator.of(context).pop(selectedMonth),
+                      onPressed: isCurrentMonthExisting ? null : () => Navigator.of(context).pop(selectedMonth),
                       child: const Text('Agregar mes'),
                     ),
                   ),

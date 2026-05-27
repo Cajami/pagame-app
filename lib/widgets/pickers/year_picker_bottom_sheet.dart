@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:pagame/theme/app_colors.dart';
 
-Future<int?> showYearPicker(BuildContext context) async {
+Future<int?> showYearPicker(BuildContext context, {List<int> existingYears = const []}) async {
   const years = <int>[2025, 2026, 2027, 2028];
   final current = DateTime.now().year.clamp(2025, 2028);
-  int selectedYear = current;
+  
+  // Default to current year if not added, otherwise search forward for the first available year
+  int defaultYear = current;
+  if (existingYears.contains(current)) {
+    defaultYear = years.firstWhere(
+      (y) => !existingYears.contains(y),
+      orElse: () => current,
+    );
+  }
+  int selectedYear = defaultYear;
 
   return showModalBottomSheet<int>(
     context: context,
@@ -16,6 +25,8 @@ Future<int?> showYearPicker(BuildContext context) async {
 
       return StatefulBuilder(
         builder: (context, setModalState) {
+          final isCurrentYearExisting = existingYears.contains(selectedYear);
+
           return Container(
             decoration: BoxDecoration(
               color: AppColors.surfaceHigh,
@@ -70,19 +81,25 @@ Future<int?> showYearPicker(BuildContext context) async {
                         childCount: years.length,
                         builder: (context, index) {
                           final year = years[index];
+                          final isExisting = existingYears.contains(year);
                           final selected = year == selectedYear;
+
+                          Color textColor = AppColors.inkMuted;
+                          if (isExisting) {
+                            textColor = AppColors.inkMuted.withValues(alpha: 0.35);
+                          } else if (selected) {
+                            textColor = AppColors.accent;
+                          }
+
                           return Center(
                             child: Text(
-                              year.toString(),
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(
-                                    color: selected
-                                        ? AppColors.accent
-                                        : AppColors.inkMuted,
-                                    fontWeight: selected
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                  ),
+                              isExisting ? '$year (Ya agregado)' : year.toString(),
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                color: textColor,
+                                fontWeight: selected && !isExisting
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
                             ),
                           );
                         },
@@ -93,7 +110,7 @@ Future<int?> showYearPicker(BuildContext context) async {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                      onPressed: () => Navigator.of(context).pop(selectedYear),
+                      onPressed: isCurrentYearExisting ? null : () => Navigator.of(context).pop(selectedYear),
                       child: const Text('Agregar año'),
                     ),
                   ),

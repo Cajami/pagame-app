@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 import 'package:pagame/models/category_item.dart';
@@ -25,7 +26,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3, // Incremented version to 3 for payments table
+      version: 6, // Incremented version to 6 to clean up type and notify_1_day columns
       onConfigure: _onConfigure,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
@@ -53,6 +54,9 @@ class DatabaseHelper {
     
     // Create newer version 3 tables
     await _createV3Tables(db);
+
+    // Create newer version 4 tables
+    await _createV4Tables(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -61,6 +65,15 @@ class DatabaseHelper {
     }
     if (oldVersion < 3) {
       await _createV3Tables(db);
+    }
+    if (oldVersion < 4) {
+      await _upgradeToV4(db);
+    }
+    if (oldVersion < 5) {
+      await _upgradeToV5(db);
+    }
+    if (oldVersion >= 2 && oldVersion < 6) {
+      await _upgradeToV6(db);
     }
   }
 
@@ -71,8 +84,12 @@ class DatabaseHelper {
         id TEXT PRIMARY KEY,
         categoria_id TEXT NOT NULL,
         name TEXT NOT NULL,
-        type TEXT NOT NULL,
         billing_cycle TEXT NOT NULL,
+        reminders_enabled INTEGER DEFAULT 0,
+        reminder_hour INTEGER DEFAULT 8,
+        reminder_minute INTEGER DEFAULT 0,
+        notify_5_days INTEGER DEFAULT 1,
+        notify_same_day INTEGER DEFAULT 1,
         FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE CASCADE
       )
     ''');
@@ -111,9 +128,118 @@ class DatabaseHelper {
         fecha_pago TEXT NOT NULL,
         notas TEXT,
         adjuntos TEXT,
+        moneda TEXT DEFAULT 'PEN',
         FOREIGN KEY (mes_id) REFERENCES meses(id) ON DELETE CASCADE
       )
     ''');
+  }
+
+  Future<void> _createV4Tables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS config (
+        clave TEXT PRIMARY KEY,
+        valor TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _upgradeToV4(Database db) async {
+    // 1. Add new columns to 'servicios' table
+    try {
+      await db.execute('ALTER TABLE servicios ADD COLUMN reminders_enabled INTEGER DEFAULT 0');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE servicios ADD COLUMN reminder_hour INTEGER DEFAULT 8');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE servicios ADD COLUMN reminder_minute INTEGER DEFAULT 0');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE servicios ADD COLUMN notify_5_days INTEGER DEFAULT 1');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE servicios ADD COLUMN notify_1_day INTEGER DEFAULT 1');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE servicios ADD COLUMN notify_same_day INTEGER DEFAULT 1');
+    } catch (_) {}
+
+    // 2. Create the 'config' table
+    await _createV4Tables(db);
+  }
+
+  Future<void> _upgradeToV5(Database db) async {
+    try {
+      await db.execute("ALTER TABLE pagos ADD COLUMN moneda TEXT DEFAULT 'PEN'");
+    } catch (_) {}
+  }
+
+  Future<void> _upgradeToV6(Database db) async {
+    // Drop columns (type and notify_1_day) using the standard SQLite recreation procedure
+    try {
+      // 1. Rename old table
+      await db.execute('ALTER TABLE servicios RENAME TO servicios_old');
+
+      // 2. Create the clean modern table
+      await db.execute('''
+        CREATE TABLE servicios (
+          id TEXT PRIMARY KEY,
+          categoria_id TEXT NOT NULL,
+          name TEXT NOT NULL,
+          billing_cycle TEXT NOT NULL,
+          reminders_enabled INTEGER DEFAULT 0,
+          reminder_hour INTEGER DEFAULT 8,
+          reminder_minute INTEGER DEFAULT 0,
+          notify_5_days INTEGER DEFAULT 1,
+          notify_same_day INTEGER DEFAULT 1,
+          FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // 3. Map and copy data from the old table to the new one
+      await db.execute('''
+        INSERT INTO servicios (
+          id, categoria_id, name, billing_cycle, reminders_enabled,
+          reminder_hour, reminder_minute, notify_5_days, notify_same_day
+        )
+        SELECT 
+          id, categoria_id, name, billing_cycle, reminders_enabled,
+          reminder_hour, reminder_minute, notify_5_days, notify_same_day
+        FROM servicios_old
+      ''');
+
+      // 4. Drop the old backup table
+      await db.execute('DROP TABLE servicios_old');
+      
+      debugPrint('SQLite: Upgraded to V6 (removed type and notify_1_day columns).');
+    } catch (e) {
+      debugPrint('Error during SQLite V6 migration: $e');
+    }
+  }
+
+  // --- CONFIG / SETTINGS CRUD ---
+
+  Future<void> saveConfig(String key, String value) async {
+    final db = await database;
+    await db.insert(
+      'config',
+      {
+        'clave': key,
+        'valor': value,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<String?> getConfig(String key) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'config',
+      where: 'clave = ?',
+      whereArgs: [key],
+    );
+    if (maps.isEmpty) return null;
+    return maps.first['valor'] as String;
   }
 
   // --- CATEGORIES CRUD ---
@@ -131,7 +257,7 @@ class DatabaseHelper {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'categorias',
-      orderBy: 'id DESC',
+      orderBy: 'name COLLATE NOCASE ASC',
     );
 
     return List.generate(maps.length, (i) {
@@ -175,7 +301,7 @@ class DatabaseHelper {
       'servicios',
       where: 'categoria_id = ?',
       whereArgs: [categoryId],
-      orderBy: 'id DESC',
+      orderBy: 'name COLLATE NOCASE ASC',
     );
 
     final List<ServiceItem> services = [];
@@ -261,6 +387,7 @@ class DatabaseHelper {
         'fecha_pago': payment.paymentDate.toIso8601String(),
         'notas': payment.notes,
         'adjuntos': jsonEncode(payment.attachments),
+        'moneda': payment.moneda,
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -290,6 +417,7 @@ class DatabaseHelper {
         paymentDate: DateTime.parse(dateStr),
         notes: maps[i]['notas'] as String?,
         attachments: adjuntos,
+        moneda: maps[i]['moneda'] as String? ?? 'PEN',
       );
     });
   }
@@ -352,6 +480,7 @@ class DatabaseHelper {
         'fecha_pago': payment.paymentDate.toIso8601String(),
         'notas': payment.notes,
         'adjuntos': jsonEncode(payment.attachments),
+        'moneda': payment.moneda,
       },
       where: 'id = ?',
       whereArgs: [payment.id],
@@ -446,5 +575,50 @@ class DatabaseHelper {
       }
     }
     return orderedPaths;
+  }
+
+  // --- ANALYTICS / STATISTICS QUERIES ---
+
+  /// Returns all services ordered alphabetically.
+  Future<List<ServiceItem>> getAllServices() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'servicios',
+      orderBy: 'name COLLATE NOCASE ASC',
+    );
+    return List.generate(maps.length, (i) => ServiceItem.fromMap(maps[i]));
+  }
+
+  /// Returns category-wise expenses for a specific month and year, filtered by currency.
+  Future<List<Map<String, dynamic>>> getMonthlyCategoryExpenses({
+    required int year,
+    required int month,
+    required String moneda,
+  }) async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT c.id, c.name, c.color_value, SUM(p.monto) as total
+      FROM pagos p
+      INNER JOIN meses m ON p.mes_id = m.id
+      INNER JOIN anios a ON m.anio_id = a.id
+      INNER JOIN servicios s ON a.servicio_id = s.id
+      INNER JOIN categorias c ON s.categoria_id = c.id
+      WHERE a.anio = ? AND m.mes = ? AND p.moneda = ? AND p.monto IS NOT NULL
+      GROUP BY c.id
+    ''', [year, month, moneda]);
+  }
+
+  /// Returns historical payments for a specific service, filtered by currency.
+  Future<List<Map<String, dynamic>>> getServicePaymentsHistory(String serviceId, String moneda) async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT a.anio, m.mes, SUM(p.monto) as total
+      FROM pagos p
+      INNER JOIN meses m ON p.mes_id = m.id
+      INNER JOIN anios a ON m.anio_id = a.id
+      WHERE a.servicio_id = ? AND p.moneda = ? AND p.monto IS NOT NULL
+      GROUP BY a.anio, m.mes
+      ORDER BY a.anio ASC, m.mes ASC
+    ''', [serviceId, moneda]);
   }
 }

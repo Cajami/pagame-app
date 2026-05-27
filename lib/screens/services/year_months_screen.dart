@@ -37,7 +37,7 @@ class _YearMonthsScreenState extends State<YearMonthsScreen> {
           duration: const Duration(seconds: 3),
           content: Row(
             children: [
-              const Icon(Icons.info_outline, color: AppColors.ink, size: 20),
+              Icon(Icons.info_outline, color: AppColors.ink, size: 20),
               const SizedBox(width: 8),
               Expanded(child: Text(message)),
             ],
@@ -47,12 +47,12 @@ class _YearMonthsScreenState extends State<YearMonthsScreen> {
   }
 
   Future<void> _createMonth() async {
-    final selectedMonth = await showMonthPicker(context);
+    final monthSet = widget.service.monthsByYear[widget.year] ?? <int>{};
+    final selectedMonth = await showMonthPicker(context, existingMonths: monthSet.toList());
     if (!mounted || selectedMonth == null) {
       return;
     }
 
-    final monthSet = widget.service.monthsByYear[widget.year] ?? <int>{};
     if (monthSet.contains(selectedMonth)) {
       _showInfoMessage('El mes ${monthName(selectedMonth)} ya existe.');
       return;
@@ -61,14 +61,21 @@ class _YearMonthsScreenState extends State<YearMonthsScreen> {
     final yearId = '${widget.service.id}_${widget.year}';
     final monthId = '${yearId}_$selectedMonth';
     
-    await DatabaseHelper.instance.insertYear(yearId, widget.service.id, widget.year);
-    await DatabaseHelper.instance.insertMonth(monthId, yearId, selectedMonth);
+    try {
+      debugPrint('Creating month: yearId=$yearId, monthId=$monthId, month=$selectedMonth');
+      await DatabaseHelper.instance.insertYear(yearId, widget.service.id, widget.year);
+      await DatabaseHelper.instance.insertMonth(monthId, yearId, selectedMonth);
 
-    setState(() {
-      monthSet.add(selectedMonth);
-      widget.service.monthsByYear[widget.year] = monthSet;
-    });
-    _showInfoMessage('Mes ${monthName(selectedMonth)} creado.');
+      setState(() {
+        monthSet.add(selectedMonth);
+        widget.service.monthsByYear[widget.year] = monthSet;
+      });
+      _showInfoMessage('Mes ${monthName(selectedMonth)} creado.');
+    } catch (e, stackTrace) {
+      debugPrint('Error creating month: $e');
+      debugPrint(stackTrace.toString());
+      _showInfoMessage('Error al crear mes: $e');
+    }
   }
 
   Future<void> _openMonthPayments(int month) async {
@@ -95,15 +102,15 @@ class _YearMonthsScreenState extends State<YearMonthsScreen> {
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: AppColors.surfaceHigh,
-          title: const Text('No se puede eliminar', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
-          content: const Text(
+          title: Text('No se puede eliminar', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
+          content: Text(
             'Este mes tiene pagos registrados. Elimina primero todos sus pagos para poder borrarlo.',
             style: TextStyle(color: AppColors.inkSoft),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Entendido', style: TextStyle(color: AppColors.accent)),
+              child: Text('Entendido', style: TextStyle(color: AppColors.accent)),
             ),
           ],
         ),
@@ -115,12 +122,12 @@ class _YearMonthsScreenState extends State<YearMonthsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceHigh,
-        title: const Text('Eliminar mes', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
+        title: Text('Eliminar mes', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
         content: Text('¿Estás seguro de que deseas eliminar el mes de ${monthName(month)}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar', style: TextStyle(color: AppColors.inkMuted)),
+            child: Text('Cancelar', style: TextStyle(color: AppColors.inkMuted)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -217,7 +224,7 @@ class _YearMonthsScreenState extends State<YearMonthsScreen> {
                               color: const Color(0x1A18C1B5),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.event_note_outlined,
                               color: AppColors.accent,
                             ),
@@ -237,8 +244,8 @@ class _YearMonthsScreenState extends State<YearMonthsScreen> {
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: AppColors.inkMuted),
                           ),
-                          trailing: PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert_rounded, color: AppColors.inkMuted),
+                           trailing: PopupMenuButton<String>(
+                            icon: Icon(Icons.more_vert_rounded, color: AppColors.inkMuted),
                             color: AppColors.card,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             onSelected: (value) {

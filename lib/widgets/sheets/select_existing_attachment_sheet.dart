@@ -184,14 +184,14 @@ class _SelectExistingAttachmentSheetState
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.border),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.photo_library_outlined,
               size: 38,
               color: AppColors.inkMuted,
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Sin comprobantes',
             style: TextStyle(
               color: AppColors.ink,
@@ -208,7 +208,7 @@ class _SelectExistingAttachmentSheetState
                   : _activeTab == 'recent'
                       ? 'No hay imágenes guardadas en ningún pago de la aplicación.'
                       : 'Selecciona una categoría y servicio para explorar sus recibos.',
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.inkSoft,
                 fontSize: 13,
                 height: 1.4,
@@ -257,7 +257,7 @@ class _SelectExistingAttachmentSheetState
                   ? Image.file(
                       File(path),
                       fit: BoxFit.cover,
-                      errorBuilder: (c, e, s) => const Center(
+                      errorBuilder: (c, e, s) => Center(
                         child: Icon(
                           Icons.broken_image_outlined,
                           color: AppColors.inkMuted,
@@ -278,7 +278,7 @@ class _SelectExistingAttachmentSheetState
                             padding: const EdgeInsets.symmetric(horizontal: 6),
                             child: Text(
                               fileName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 9,
                                 color: AppColors.ink,
                                 fontWeight: FontWeight.bold,
@@ -302,9 +302,9 @@ class _SelectExistingAttachmentSheetState
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surfaceHigh,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
@@ -322,7 +322,7 @@ class _SelectExistingAttachmentSheetState
               ),
             ),
             const SizedBox(height: 18),
-            const Text(
+            Text(
               'Elegir comprobante guardado',
               style: TextStyle(
                 color: AppColors.ink,
@@ -331,7 +331,7 @@ class _SelectExistingAttachmentSheetState
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Selecciona un recibo registrado anteriormente para vincularlo a este pago sin duplicar espacio.',
               style: TextStyle(
                 color: AppColors.inkSoft,
@@ -376,7 +376,7 @@ class _SelectExistingAttachmentSheetState
                     child: DropdownButtonFormField<CategoryItem>(
                       initialValue: _selectedCategory,
                       dropdownColor: AppColors.card,
-                      style: const TextStyle(color: AppColors.ink, fontSize: 13),
+                      style: TextStyle(color: AppColors.ink, fontSize: 13),
                       decoration: const InputDecoration(
                         labelText: 'Categoría',
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -395,9 +395,9 @@ class _SelectExistingAttachmentSheetState
                     child: DropdownButtonFormField<ServiceItem>(
                       key: ValueKey(_selectedCategory?.id),
                       initialValue: _selectedService,
-                      disabledHint: const Text('Primero elige cat.', style: TextStyle(color: AppColors.inkMuted, fontSize: 11)),
+                      disabledHint: Text('Primero elige cat.', style: TextStyle(color: AppColors.inkMuted, fontSize: 11)),
                       dropdownColor: AppColors.card,
-                      style: const TextStyle(color: AppColors.ink, fontSize: 13),
+                      style: TextStyle(color: AppColors.ink, fontSize: 13),
                       decoration: const InputDecoration(
                         labelText: 'Servicio',
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),

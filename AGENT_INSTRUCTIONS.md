@@ -55,3 +55,22 @@ Sigue siempre esta secuencia cuando recibas una solicitud del usuario:
    * Preguntar al usuario si está satisfecho y si autoriza subir a GitHub.
    * **NUNCA** hacer git push o commits automáticos sin su confirmación explícita.
 5. **Ejecutar la Regla de Oro**: Una vez autorizado, aplicar el árbol de decisión anterior (Caso A o Caso B) según corresponda.
+
+---
+
+## 💾 REGLAS PARA BASE DE DATOS Y COPAS DE SEGURIDAD (ZIP)
+
+Cuando realices modificaciones en la base de datos o añadas/elimines campos de tablas:
+
+### 1. Migraciones de Esquema SQLite Limpias (Sin `DROP COLUMN` directo)
+* **Regla**: Dado que muchos motores SQLite en dispositivos Android antiguos no soportan `ALTER TABLE DROP COLUMN`, **nunca** uses esa instrucción.
+* **Procedimiento Seguro de Recreación**:
+  1. Renombrar la tabla original a `nombre_tabla_old`.
+  2. Crear la nueva tabla con el esquema limpio deseado.
+  3. Copiar los registros con `INSERT INTO nombre_tabla SELECT ... FROM nombre_tabla_old`.
+  4. Eliminar la tabla `nombre_tabla_old` (`DROP TABLE`).
+
+### 2. Sanitización Obligatoria en Importador de Respaldos (ZIP)
+* **Archivo afectado**: `lib/utils/backup_helper.dart` (método `importBackup()`).
+* **Regla**: Al alterar campos de base de datos, debes actualizar obligatoriamente la sanitización de filas en el importador.
+* **Lógica**: Al restaurar copias de seguridad de formatos JSON/ZIP antiguos, mapea y copia **únicamente** los campos válidos del esquema moderno y descarta los obsoletos. Si faltan columnas requeridas de esquemas antiguos, inyecta valores por defecto válidos. Esto previene excepciones fatales de inserción en SQLite al restaurar respaldos antiguos de hace meses.

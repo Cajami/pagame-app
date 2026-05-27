@@ -8,7 +8,7 @@ class AppBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return IgnorePointer(
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [AppColors.surface, AppColors.surfaceHigh],
             begin: Alignment.topCenter,
@@ -41,16 +41,16 @@ class HeaderBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       fit: StackFit.expand,
-      children: const [
+      children: [
         DecoratedBox(
           decoration: BoxDecoration(gradient: AppColors.headerGradient),
         ),
-        Positioned(
+        const Positioned(
           top: -60,
           right: -40,
           child: _BackgroundOrb(color: Color(0x29FFFFFF), size: 160),
         ),
-        Positioned(
+        const Positioned(
           bottom: -80,
           left: -50,
           child: _BackgroundOrb(color: Color(0x1FFFFFFF), size: 200),

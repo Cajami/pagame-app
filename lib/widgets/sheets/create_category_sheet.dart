@@ -53,10 +53,13 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
       return;
     }
 
+    final name = _nameController.text.trim();
+    final capitalizedName = name.isNotEmpty ? '${name[0].toUpperCase()}${name.substring(1)}' : name;
+
     Navigator.of(context).pop(
       CategoryItem(
         id: widget.categoryToEdit?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
-        name: _nameController.text.trim(),
+        name: capitalizedName,
         icon: _selectedIcon,
         color: _selectedColor,
       ),
@@ -118,6 +121,7 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
                   TextFormField(
                     controller: _nameController,
                     textInputAction: TextInputAction.done,
+                    textCapitalization: TextCapitalization.sentences,
                     decoration: const InputDecoration(
                       labelText: 'Nombre de la categoría',
                     ),

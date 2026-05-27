@@ -31,9 +31,9 @@ class ShowAttachmentsSheet extends StatelessWidget {
 
     return Container(
       constraints: BoxConstraints(maxHeight: maxOffset),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surfaceHigh,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
       ),
       child: SafeArea(
         top: false,
@@ -64,14 +64,14 @@ class ShowAttachmentsSheet extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 '${paths.length} ${paths.length == 1 ? 'archivo asociado' : 'archivos asociados'} a este pago.',
-                style: const TextStyle(color: AppColors.inkSoft, fontSize: 13),
+                style: TextStyle(color: AppColors.inkSoft, fontSize: 13),
               ),
               const SizedBox(height: 16),
               Flexible(
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: paths.length,
-                  separatorBuilder: (context, index) => const Divider(color: AppColors.border, height: 1),
+                  separatorBuilder: (context, index) => Divider(color: AppColors.border, height: 1),
                   itemBuilder: (context, index) {
                     final path = paths[index];
                     final isImg = _isImage(path);
@@ -92,7 +92,7 @@ class ShowAttachmentsSheet extends StatelessWidget {
                             ? Image.file(
                                 File(path),
                                 fit: BoxFit.cover,
-                                errorBuilder: (c, e, s) => const Icon(
+                                errorBuilder: (c, e, s) => Icon(
                                   Icons.image_not_supported_outlined,
                                   color: AppColors.inkMuted,
                                 ),
@@ -104,7 +104,7 @@ class ShowAttachmentsSheet extends StatelessWidget {
                       ),
                       title: Text(
                         fileName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.ink,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -114,13 +114,13 @@ class ShowAttachmentsSheet extends StatelessWidget {
                       ),
                       subtitle: Text(
                         isImg ? 'Imagen' : 'Documento PDF',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.inkMuted,
                           fontSize: 12,
                         ),
                       ),
                       trailing: IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.fullscreen_rounded,
                           color: AppColors.accent,
                         ),

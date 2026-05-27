@@ -1,30 +1,38 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color ink = Color(0xFF0B1E2D);
-  static const Color inkSoft = Color(0xFF4C5D6C);
-  static const Color inkMuted = Color(0xFF6E7E8E);
-  static const Color surface = Color(0xFFF7F3EC);
-  static const Color surfaceHigh = Color(0xFFFCFAF6);
-  static const Color card = Color(0xFFFFFFFF);
-  static const Color border = Color(0xFFE3DED4);
-  static const Color accent = Color(0xFF18C1B5);
-  static const Color accentDark = Color(0xFF06383B);
-  static const Color accentSoft = Color(0xFFBDEFE9);
-  static const Color warning = Color(0xFFF2B365);
-  static const Color headerTop = Color(0xFF0B1E2D);
-  static const Color headerMid = Color(0xFF10324A);
-  static const Color headerBottom = Color(0xFF0E5165);
-  static const Color headerChip = Color(0xFF123349);
-  static const Color headerChipBorder = Color(0xFF2A5672);
+  static bool isDark = false;
 
-  static const LinearGradient headerGradient = LinearGradient(
+  static Color get ink => isDark ? const Color(0xFFF8F9FA) : const Color(0xFF0B1E2D);
+  static Color get inkSoft => isDark ? const Color(0xFFDEE2E6) : const Color(0xFF4C5D6C);
+  static Color get inkMuted => isDark ? const Color(0xFFadb5bd) : const Color(0xFF6E7E8E);
+  
+  // OLED Dark Mode is pure black for deep blacks, card is dark gray
+  static Color get surface => isDark ? const Color(0xFF000000) : const Color(0xFFF7F3EC);
+  static Color get surfaceHigh => isDark ? const Color(0xFF121212) : const Color(0xFFFCFAF6);
+  static Color get card => isDark ? const Color(0xFF1C1C1E) : const Color(0xFFFFFFFF);
+  static Color get border => isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE3DED4);
+  
+  static Color get accent => const Color(0xFF18C1B5);
+  static Color get accentDark => isDark ? const Color(0xFFE0FFFD) : const Color(0xFF06383B);
+  static Color get accentSoft => isDark ? const Color(0xFF004440) : const Color(0xFFBDEFE9);
+  
+  static Color get warning => const Color(0xFFF2B365);
+  
+  static Color get headerTop => isDark ? const Color(0xFF0F0F0F) : const Color(0xFF0B1E2D);
+  static Color get headerMid => isDark ? const Color(0xFF161E24) : const Color(0xFF10324A);
+  static Color get headerBottom => isDark ? const Color(0xFF10323C) : const Color(0xFF0E5165);
+  
+  static Color get headerChip => isDark ? const Color(0xFF2D2D2D) : const Color(0xFF123349);
+  static Color get headerChipBorder => isDark ? const Color(0xFF424242) : const Color(0xFF2A5672);
+
+  static LinearGradient get headerGradient => LinearGradient(
     colors: [headerTop, headerMid, headerBottom],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  static const List<BoxShadow> cardShadow = [
-    BoxShadow(color: Color(0x14000000), blurRadius: 18, offset: Offset(0, 10)),
-  ];
+  static List<BoxShadow> get cardShadow => isDark 
+      ? [const BoxShadow(color: Color(0x3A000000), blurRadius: 14, offset: Offset(0, 6))]
+      : [const BoxShadow(color: Color(0x14000000), blurRadius: 18, offset: Offset(0, 10))];
 }

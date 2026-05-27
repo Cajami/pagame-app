@@ -6,6 +6,7 @@ import 'package:pagame/utils/database_helper.dart';
 import 'package:pagame/widgets/common/app_background.dart';
 import 'package:pagame/widgets/pickers/year_picker_bottom_sheet.dart';
 
+
 class ServiceTimelineScreen extends StatefulWidget {
   const ServiceTimelineScreen({super.key, required this.service});
 
@@ -16,8 +17,16 @@ class ServiceTimelineScreen extends StatefulWidget {
 }
 
 class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
+  late ServiceItem _currentService;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentService = widget.service;
+  }
+
   List<int> get _years {
-    final values = widget.service.monthsByYear.keys.toList()
+    final values = _currentService.monthsByYear.keys.toList()
       ..sort((a, b) => b.compareTo(a));
     return values;
   }
@@ -30,7 +39,7 @@ class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
           duration: const Duration(seconds: 3),
           content: Row(
             children: [
-              const Icon(Icons.info_outline, color: AppColors.ink, size: 20),
+              Icon(Icons.info_outline, color: AppColors.ink, size: 20),
               const SizedBox(width: 8),
               Expanded(child: Text(message)),
             ],
@@ -40,21 +49,21 @@ class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
   }
 
   Future<void> _createYear() async {
-    final selectedYear = await showYearPicker(context);
+    final selectedYear = await showYearPicker(context, existingYears: _currentService.monthsByYear.keys.toList());
     if (!mounted || selectedYear == null) {
       return;
     }
 
-    if (widget.service.monthsByYear.containsKey(selectedYear)) {
+    if (_currentService.monthsByYear.containsKey(selectedYear)) {
       _showInfoMessage('El año $selectedYear ya existe en este servicio.');
       return;
     }
 
-    final yearId = '${widget.service.id}_$selectedYear';
-    await DatabaseHelper.instance.insertYear(yearId, widget.service.id, selectedYear);
+    final yearId = '${_currentService.id}_$selectedYear';
+    await DatabaseHelper.instance.insertYear(yearId, _currentService.id, selectedYear);
 
     setState(() {
-      widget.service.monthsByYear[selectedYear] = <int>{};
+      _currentService.monthsByYear[selectedYear] = <int>{};
     });
     _showInfoMessage('Año $selectedYear creado.');
   }
@@ -63,7 +72,7 @@ class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (context) =>
-            YearMonthsScreen(service: widget.service, year: year),
+            YearMonthsScreen(service: _currentService, year: year),
       ),
     );
     if (mounted) {
@@ -72,21 +81,21 @@ class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
   }
 
   Future<void> _deleteYearAction(int year) async {
-    final months = widget.service.monthsByYear[year] ?? <int>{};
+    final months = _currentService.monthsByYear[year] ?? <int>{};
     if (months.isNotEmpty) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: AppColors.surfaceHigh,
-          title: const Text('No se puede eliminar', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
-          content: const Text(
+          title: Text('No se puede eliminar', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
+          content: Text(
             'Este año tiene meses registrados. Elimina primero todos sus meses para poder borrarlo.',
             style: TextStyle(color: AppColors.inkSoft),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Entendido', style: TextStyle(color: AppColors.accent)),
+              child: Text('Entendido', style: TextStyle(color: AppColors.accent)),
             ),
           ],
         ),
@@ -98,12 +107,12 @@ class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceHigh,
-        title: const Text('Eliminar año', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
+        title: Text('Eliminar año', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
         content: Text('¿Estás seguro de que deseas eliminar el año $year?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar', style: TextStyle(color: AppColors.inkMuted)),
+            child: Text('Cancelar', style: TextStyle(color: AppColors.inkMuted)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -115,14 +124,16 @@ class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
     );
 
     if (confirm == true) {
-      final yearId = '${widget.service.id}_$year';
+      final yearId = '${_currentService.id}_$year';
       await DatabaseHelper.instance.deleteYear(yearId);
       setState(() {
-        widget.service.monthsByYear.remove(year);
+        _currentService.monthsByYear.remove(year);
       });
       _showInfoMessage('Año $year eliminado.');
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +142,14 @@ class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
     return Scaffold(
       appBar: AppBar(
         flexibleSpace: const HeaderBackground(),
-        title: Text(widget.service.name),
+        title: Text(_currentService.name),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home_rounded),
+            tooltip: 'Volver al Inicio',
+            onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+          ),
+        ],
       ),
       floatingActionButton: years.isNotEmpty
           ? FloatingActionButton.extended(
@@ -153,7 +171,7 @@ class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
                   itemBuilder: (context, index) {
                     final year = years[index];
                     final monthCount =
-                        widget.service.monthsByYear[year]?.length ?? 0;
+                        _currentService.monthsByYear[year]?.length ?? 0;
 
                     return Container(
                       decoration: BoxDecoration(
@@ -178,7 +196,7 @@ class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
                               color: const Color(0x1A18C1B5),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.calendar_today_outlined,
                               color: AppColors.accent,
                             ),
@@ -199,7 +217,7 @@ class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
                                 ?.copyWith(color: AppColors.inkMuted),
                           ),
                           trailing: PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert_rounded, color: AppColors.inkMuted),
+                            icon: Icon(Icons.more_vert_rounded, color: AppColors.inkMuted),
                             color: AppColors.card,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             onSelected: (value) {

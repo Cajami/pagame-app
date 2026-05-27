@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:pagame/app.dart';
 import 'package:pagame/models/category_item.dart';
 import 'package:pagame/models/service_item.dart';
 import 'package:pagame/screens/categories/category_services_screen.dart';
+import 'package:pagame/screens/categories/statistics_tab.dart';
 import 'package:pagame/theme/app_colors.dart';
 import 'package:pagame/utils/database_helper.dart';
 import 'package:pagame/widgets/common/app_background.dart';
 import 'package:pagame/widgets/sheets/create_category_sheet.dart';
 import 'package:pagame/utils/backup_helper.dart';
+import 'package:pagame/utils/notification_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class CategoriesScreen extends StatefulWidget {
@@ -25,6 +28,39 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   void initState() {
     super.initState();
     _loadCategories();
+    _refreshAllRemindersSilently();
+  }
+
+  Future<void> _refreshAllRemindersSilently() async {
+    try {
+      final db = DatabaseHelper.instance;
+
+      // Optimization: Only refresh once per day to prevent redundant scheduling calls
+      final todayStr = DateTime.now().toIso8601String().substring(0, 10); // Format: "yyyy-MM-dd"
+      final lastRefresh = await db.getConfig('last_reminders_refresh');
+
+      if (lastRefresh == todayStr) {
+        debugPrint('Reminders already refreshed today ($todayStr). Skipping.');
+        return;
+      }
+
+      final services = await db.getAllServices();
+      for (final service in services) {
+        if (service.remindersEnabled) {
+          await NotificationHelper.scheduleServiceReminders(service);
+        }
+      }
+
+      // Save last refresh timestamp
+      await db.saveConfig('last_reminders_refresh', todayStr);
+      debugPrint('Silently refreshed all active reminders for the next 6 months.');
+    } catch (e) {
+      debugPrint('Failed to refresh reminders silently: $e');
+    }
+  }
+
+  void _sortCategories() {
+    _categories.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
   }
 
   Future<void> _loadCategories() async {
@@ -55,7 +91,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           duration: const Duration(seconds: 4),
           content: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.check_circle_outline,
                 color: AppColors.ink,
                 size: 20,
@@ -87,7 +123,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     await DatabaseHelper.instance.insertCategory(newCategory);
 
     setState(() {
-      _categories.insert(0, newCategory);
+      _categories.add(newCategory);
+      _sortCategories();
       _servicesByCategoryId[newCategory.id] = [];
     });
 
@@ -130,6 +167,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       final index = _categories.indexWhere((cat) => cat.id == category.id);
       if (index != -1) {
         _categories[index] = updatedCategory;
+        _sortCategories();
       }
     });
 
@@ -143,15 +181,15 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: AppColors.surfaceHigh,
-          title: const Text('No se puede eliminar', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
-          content: const Text(
+          title: Text('No se puede eliminar', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
+          content: Text(
             'Esta categoría tiene servicios registrados. Elimina primero todos sus servicios para poder borrarla.',
             style: TextStyle(color: AppColors.inkSoft),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Entendido', style: TextStyle(color: AppColors.accent)),
+              child: Text('Entendido', style: TextStyle(color: AppColors.accent)),
             ),
           ],
         ),
@@ -163,12 +201,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceHigh,
-        title: const Text('Eliminar categoría', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
+        title: Text('Eliminar categoría', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
         content: Text('¿Estás seguro de que deseas eliminar la categoría "${category.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar', style: TextStyle(color: AppColors.inkMuted)),
+            child: Text('Cancelar', style: TextStyle(color: AppColors.inkMuted)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -204,6 +242,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         onEditCategory: _editCategory,
         onDeleteCategory: _deleteCategoryAction,
       );
+    } else if (_selectedTab == 1) {
+      return const StatisticsTab();
     }
 
     return _SettingsTabState(
@@ -281,6 +321,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               icon: Icon(Icons.folder_copy_outlined),
               selectedIcon: Icon(Icons.folder_copy),
               label: 'Categorías',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.bar_chart_outlined),
+              selectedIcon: Icon(Icons.bar_chart_rounded),
+              label: 'Estadísticas',
             ),
             NavigationDestination(
               icon: Icon(Icons.settings_outlined),
@@ -432,34 +477,30 @@ class _CategoriesListState extends StatelessWidget {
                 ).textTheme.bodyMedium?.copyWith(color: AppColors.inkMuted),
               ),
               trailing: PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert_rounded, color: AppColors.inkMuted),
+                icon: Icon(Icons.more_vert_rounded, color: AppColors.inkMuted),
                 color: AppColors.card,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 onSelected: (value) {
-                  if (value == 'edit') {
-                    onEditCategory(category);
-                  } else if (value == 'delete') {
-                    onDeleteCategory(category);
-                  }
+                  onEditCategory(category);
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'edit',
                     child: Row(
                       children: [
                         Icon(Icons.edit_outlined, color: AppColors.ink, size: 20),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text('Editar', style: TextStyle(color: AppColors.ink)),
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-                        SizedBox(width: 8),
-                        Text('Eliminar', style: TextStyle(color: Colors.redAccent)),
+                        const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                        const SizedBox(width: 8),
+                        Text('Eliminar', style: const TextStyle(color: Colors.redAccent)),
                       ],
                     ),
                   ),
@@ -487,6 +528,19 @@ class _MainHeader extends StatelessWidget {
         child: Stack(
           children: [
             const HeaderBackground(),
+            Positioned(
+              top: 16,
+              right: 20,
+              child: Text(
+                'v1.0',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.55),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
               child: Row(
@@ -616,15 +670,15 @@ class _SettingsTabStateState extends State<_SettingsTabState> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceHigh,
-        title: const Text('Importar copia de seguridad', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
-        content: const Text(
+        title: Text('Importar copia de seguridad', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
+        content: Text(
           'Al importar, los datos de la copia de seguridad se combinarán con tu información actual sin borrar nada. ¿Deseas continuar?',
           style: TextStyle(color: AppColors.inkSoft),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar', style: TextStyle(color: AppColors.inkMuted)),
+            child: Text('Cancelar', style: TextStyle(color: AppColors.inkMuted)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -703,14 +757,14 @@ class _SettingsTabStateState extends State<_SettingsTabState> {
                     color: const Color(0x1A18C1B5),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(Icons.storage_rounded, color: AppColors.accent, size: 28),
+                  child: Icon(Icons.storage_rounded, color: AppColors.accent, size: 28),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Almacenamiento Local',
                         style: TextStyle(
                           color: AppColors.ink,
@@ -800,6 +854,69 @@ class _SettingsTabStateState extends State<_SettingsTabState> {
               ],
             ),
           ),
+          const SizedBox(height: 14),
+
+          // Card: Modo Oscuro OLED
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.border),
+              boxShadow: AppColors.cardShadow,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0x1A18C1B5),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    AppColors.isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    color: AppColors.accent,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Modo Oscuro',
+                        style: TextStyle(
+                          color: AppColors.ink,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Optimiza el consumo de batería en pantallas OLED.',
+                        style: TextStyle(
+                          color: AppColors.inkMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: AppColors.isDark,
+                  activeThumbColor: AppColors.accent,
+                  onChanged: (value) async {
+                    await DatabaseHelper.instance.saveConfig('dark_mode', value ? '1' : '0');
+                    if (context.mounted) {
+                      PagameApp.of(context)?.toggleTheme(value);
+                      setState(() {});
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 18),
 
           // Card 3: Backups Panel
@@ -822,10 +939,10 @@ class _SettingsTabStateState extends State<_SettingsTabState> {
                         color: const Color(0x1A18C1B5),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.inventory_2_outlined, color: AppColors.accent, size: 20),
+                      child: Icon(Icons.inventory_2_outlined, color: AppColors.accent, size: 20),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       'Copia de Seguridad Completa',
                       style: TextStyle(
                         color: AppColors.ink,
@@ -898,7 +1015,7 @@ class _SettingsTabStateState extends State<_SettingsTabState> {
                         color: const Color(0x1A18C1B5),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.terminal_rounded,
                         color: AppColors.accent,
                         size: 24,
@@ -909,7 +1026,7 @@ class _SettingsTabStateState extends State<_SettingsTabState> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Desarrollador',
                             style: TextStyle(
                               color: AppColors.inkMuted,
@@ -918,7 +1035,7 @@ class _SettingsTabStateState extends State<_SettingsTabState> {
                             ),
                           ),
                           const SizedBox(height: 2),
-                          const Text(
+                          Text(
                             'JavierSoft',
                             style: TextStyle(
                               color: AppColors.ink,
@@ -932,7 +1049,7 @@ class _SettingsTabStateState extends State<_SettingsTabState> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const Divider(color: AppColors.border, height: 1),
+                Divider(color: AppColors.border, height: 1),
                 const SizedBox(height: 16),
                 // GitHub Button
                 InkWell(
@@ -947,7 +1064,7 @@ class _SettingsTabStateState extends State<_SettingsTabState> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.code_rounded, color: AppColors.inkSoft, size: 18),
+                        Icon(Icons.code_rounded, color: AppColors.inkSoft, size: 18),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -959,7 +1076,7 @@ class _SettingsTabStateState extends State<_SettingsTabState> {
                             ),
                           ),
                         ),
-                        const Icon(Icons.open_in_new_rounded, color: AppColors.inkMuted, size: 14),
+                        Icon(Icons.open_in_new_rounded, color: AppColors.inkMuted, size: 14),
                       ],
                     ),
                   ),
@@ -978,7 +1095,7 @@ class _SettingsTabStateState extends State<_SettingsTabState> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.alternate_email_rounded, color: AppColors.inkSoft, size: 18),
+                        Icon(Icons.alternate_email_rounded, color: AppColors.inkSoft, size: 18),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -990,7 +1107,7 @@ class _SettingsTabStateState extends State<_SettingsTabState> {
                             ),
                           ),
                         ),
-                        const Icon(Icons.open_in_new_rounded, color: AppColors.inkMuted, size: 14),
+                        Icon(Icons.open_in_new_rounded, color: AppColors.inkMuted, size: 14),
                       ],
                     ),
                   ),

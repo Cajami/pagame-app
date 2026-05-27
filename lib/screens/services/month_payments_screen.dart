@@ -8,6 +8,7 @@ import 'package:pagame/utils/date_utils.dart';
 import 'package:pagame/widgets/common/app_background.dart';
 import 'package:pagame/widgets/sheets/create_payment_sheet.dart';
 import 'package:pagame/widgets/sheets/show_attachments_sheet.dart';
+import 'package:pagame/utils/notification_helper.dart';
 
 class MonthPaymentsScreen extends StatefulWidget {
   const MonthPaymentsScreen({
@@ -71,14 +72,24 @@ class _MonthPaymentsScreenState extends State<MonthPaymentsScreen> {
     // Save to SQLite database
     await DatabaseHelper.instance.insertPayment(monthId, payment);
 
+    try {
+      // Cancel dynamic offline reminders for this paid month
+      await NotificationHelper.cancelMonthlyReminders(
+        serviceId: widget.service.id,
+        year: widget.year,
+        month: widget.month,
+      );
+    } catch (e) {
+      debugPrint('Error al cancelar recordatorios: $e');
+    }
+
     if (!mounted) {
       return;
     }
 
-    setState(() {
-      _paymentsList.insert(0, payment);
-      widget.service.paymentsByPeriod[_periodKey] = _paymentsList;
-    });
+    await _loadPayments();
+
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -108,13 +119,22 @@ class _MonthPaymentsScreenState extends State<MonthPaymentsScreen> {
 
     await DatabaseHelper.instance.updatePayment(updatedPayment);
 
-    setState(() {
-      final index = _paymentsList.indexWhere((p) => p.id == payment.id);
-      if (index != -1) {
-        _paymentsList[index] = updatedPayment;
-        widget.service.paymentsByPeriod[_periodKey] = _paymentsList;
-      }
-    });
+    try {
+      // Cancel dynamic offline reminders for this paid month in case of edits
+      await NotificationHelper.cancelMonthlyReminders(
+        serviceId: widget.service.id,
+        year: widget.year,
+        month: widget.month,
+      );
+    } catch (e) {
+      debugPrint('Error al cancelar recordatorios en edición: $e');
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    await _loadPayments();
 
     if (!mounted) return;
 
@@ -133,12 +153,12 @@ class _MonthPaymentsScreenState extends State<MonthPaymentsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceHigh,
-        title: const Text('Eliminar pago', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
+        title: Text('Eliminar pago', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
         content: const Text('¿Estás seguro de que deseas eliminar este pago? Esta acción no se puede deshacer.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar', style: TextStyle(color: AppColors.inkMuted)),
+            child: Text('Cancelar', style: TextStyle(color: AppColors.inkMuted)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -179,91 +199,90 @@ class _MonthPaymentsScreenState extends State<MonthPaymentsScreen> {
     if (paths.isEmpty) return const SizedBox.shrink();
 
     final count = paths.length;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: InkWell(
-        onTap: () {
-          showModalBottomSheet(
-            context: context,
-            backgroundColor: Colors.transparent,
-            isScrollControlled: true,
-            builder: (context) => ShowAttachmentsSheet(
-              payment: payment,
-              service: widget.service,
-              year: widget.year,
-              monthName: monthName(widget.month),
+    return InkWell(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.transparent,
+          isScrollControlled: true,
+          builder: (context) => ShowAttachmentsSheet(
+            payment: payment,
+            service: widget.service,
+            year: widget.year,
+            monthName: monthName(widget.month),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceHigh.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.attach_file_rounded, color: AppColors.accent, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                count == 1 ? '1 archivo adjunto' : '$count archivos adjuntos',
+                style: TextStyle(
+                  color: AppColors.ink,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
             ),
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceHigh.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.attach_file_rounded, color: AppColors.accent, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  count == 1 ? '1 archivo adjunto' : '$count archivos adjuntos',
-                  style: const TextStyle(
-                    color: AppColors.ink,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-              // Circular mini preview stack (avatar-like)
-              SizedBox(
-                height: 28,
-                width: (count > 3 ? 3 : count) * 20.0 + 8.0,
-                child: Stack(
-                  children: List.generate(count > 3 ? 3 : count, (index) {
-                    final path = paths[index];
-                    final isImg = _isImage(path);
-                    return Positioned(
-                      left: index * 20.0,
-                      child: Container(
-                        width: 26,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.card, width: 1.5),
-                          color: AppColors.surface,
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: isImg
-                            ? Image.file(
-                                File(path),
-                                fit: BoxFit.cover,
-                                errorBuilder: (c, e, s) => const Icon(
-                                  Icons.broken_image_outlined,
-                                  size: 12,
-                                  color: AppColors.inkMuted,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.picture_as_pdf_outlined,
-                                color: Colors.redAccent,
-                                size: 12,
-                              ),
+            // Circular mini preview stack (avatar-like)
+            SizedBox(
+              height: 28,
+              width: (count > 3 ? 3 : count) * 20.0 + 8.0,
+              child: Stack(
+                children: List.generate(count > 3 ? 3 : count, (index) {
+                  final path = paths[index];
+                  final isImg = _isImage(path);
+                  return Positioned(
+                    left: index * 20.0,
+                    child: Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.card, width: 1.5),
+                        color: AppColors.surface,
                       ),
-                    );
-                  }),
-                ),
+                      clipBehavior: Clip.antiAlias,
+                      child: isImg
+                          ? Image.file(
+                              File(path),
+                              fit: BoxFit.cover,
+                              errorBuilder: (c, e, s) => Icon(
+                                Icons.broken_image_outlined,
+                                size: 12,
+                                color: AppColors.inkMuted,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.picture_as_pdf_outlined,
+                              color: Colors.redAccent,
+                              size: 12,
+                            ),
+                    ),
+                  );
+                }),
               ),
-              const SizedBox(width: 4),
-              const Icon(Icons.keyboard_arrow_right_rounded, color: AppColors.inkMuted, size: 20),
-            ],
-          ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.keyboard_arrow_right_rounded, color: AppColors.inkMuted, size: 20),
+          ],
         ),
       ),
     );
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -318,9 +337,6 @@ class _MonthPaymentsScreenState extends State<MonthPaymentsScreen> {
                       itemBuilder: (context, index) {
                         final payment = payments[index];
                         final hasNotes = (payment.notes ?? '').isNotEmpty;
-                        final dateAndNotes = hasNotes
-                            ? '${formatDate(payment.paymentDate)} · ${payment.notes}'
-                            : formatDate(payment.paymentDate);
 
                         return Container(
                           decoration: BoxDecoration(
@@ -329,82 +345,147 @@ class _MonthPaymentsScreenState extends State<MonthPaymentsScreen> {
                             border: Border.all(color: AppColors.border),
                             boxShadow: AppColors.cardShadow,
                           ),
+                          padding: const EdgeInsets.all(16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                leading: Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0x1A18C1B5),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.receipt_long_outlined,
-                                    color: AppColors.accent,
-                                  ),
-                                ),
-                                title: Text(
-                                  payment.amount == null
-                                      ? payment.status
-                                      : 'S/ ${payment.amount!.toStringAsFixed(2)} · ${payment.status}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        color: AppColors.ink,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                ),
-                                subtitle: Text(
-                                  dateAndNotes,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(color: AppColors.inkMuted),
-                                ),
-                                trailing: PopupMenuButton<String>(
-                                  icon: const Icon(Icons.more_vert_rounded, color: AppColors.inkMuted),
-                                  color: AppColors.card,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                  onSelected: (value) {
-                                    if (value == 'edit') {
-                                      _editPayment(payment);
-                                    } else if (value == 'delete') {
-                                      _deletePaymentAction(payment);
-                                    }
-                                  },
-                                  itemBuilder: (context) => [
-                                    const PopupMenuItem(
-                                      value: 'edit',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.edit_outlined, color: AppColors.ink, size: 20),
-                                          SizedBox(width: 8),
-                                          Text('Editar', style: TextStyle(color: AppColors.ink)),
-                                        ],
-                                      ),
+                              // Main Row: Icon on the left (covering both lines), Amount and Date stacked in the middle, and Menu on the far right
+                              Row(
+                                children: [
+                                  // Leading: Centered Icon Container spanning both rows
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0x1A18C1B5),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    const PopupMenuItem(
-                                      value: 'delete',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-                                          SizedBox(width: 8),
-                                          Text('Eliminar', style: TextStyle(color: Colors.redAccent)),
-                                        ],
-                                      ),
+                                    child: Icon(
+                                      Icons.receipt_long_outlined,
+                                      color: AppColors.accent,
+                                      size: 22,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  // Middle: Amount & Date Column next to the icon
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // Row 1: Amount pagado (larger size, bold)
+                                        Text(
+                                          payment.amount == null
+                                              ? 'Registrado'
+                                              : '${payment.moneda == 'USD' ? '\$' : 'S/'} ${payment.amount!.toStringAsFixed(2)}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleLarge
+                                              ?.copyWith(
+                                                color: AppColors.ink,
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 18,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        // Row 2: Date text (suelto, no border, clean alignment)
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.calendar_month_rounded,
+                                              size: 13,
+                                              color: AppColors.inkMuted,
+                                            ),
+                                            const SizedBox(width: 5),
+                                            Text(
+                                              formatNaturalDate(payment.paymentDate),
+                                              style: TextStyle(
+                                                color: AppColors.inkMuted,
+                                                fontSize: 12.5,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Trailing: Option Menu Button
+                                  PopupMenuButton<String>(
+                                    icon: Icon(Icons.more_vert_rounded, color: AppColors.inkMuted),
+                                    color: AppColors.card,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                    onSelected: (value) {
+                                      if (value == 'edit') {
+                                        _editPayment(payment);
+                                      } else if (value == 'delete') {
+                                        _deletePaymentAction(payment);
+                                      }
+                                    },
+                                    itemBuilder: (context) => [
+                                      PopupMenuItem(
+                                        value: 'edit',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.edit_outlined, color: AppColors.ink, size: 20),
+                                            const SizedBox(width: 8),
+                                            Text('Editar', style: TextStyle(color: AppColors.ink)),
+                                          ],
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                                            const SizedBox(width: 8),
+                                            const Text('Eliminar', style: TextStyle(color: Colors.redAccent)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                              if (payment.attachments.isNotEmpty)
+                              // Notes (If present, spaced below the main row)
+                              if (hasNotes) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(Icons.edit_note_rounded, size: 16, color: AppColors.inkSoft),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          'Nota: ${payment.notes}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: AppColors.inkSoft,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              // Attachments (If present)
+                              if (payment.attachments.isNotEmpty) ...[
+                                const SizedBox(height: 10),
                                 _buildAttachmentsListPreview(context, payment),
+                              ],
                             ],
                           ),
                         );

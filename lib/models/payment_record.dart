@@ -6,6 +6,7 @@ class PaymentRecord {
     required this.paymentDate,
     this.notes,
     this.attachments = const <String>[],
+    this.moneda = 'PEN',
   });
 
   final String id;
@@ -14,4 +15,5 @@ class PaymentRecord {
   final DateTime paymentDate;
   final String? notes;
   final List<String> attachments;
+  final String moneda;
 }

@@ -155,7 +155,7 @@ class _SecurityGuardState extends State<SecurityGuard> {
                     ),
                     const SizedBox(height: 40),
                     if (_isChecking)
-                      const CircularProgressIndicator(color: AppColors.accent)
+                      CircularProgressIndicator(color: AppColors.accent)
                     else
                       SizedBox(
                         width: double.infinity,

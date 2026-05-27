@@ -6,6 +6,7 @@ import 'package:pagame/theme/app_colors.dart';
 import 'package:pagame/utils/database_helper.dart';
 import 'package:pagame/widgets/common/app_background.dart';
 import 'package:pagame/widgets/sheets/create_service_sheet.dart';
+import 'package:pagame/widgets/sheets/configure_reminders_sheet.dart';
 
 class CategoryServicesScreen extends StatefulWidget {
   const CategoryServicesScreen({
@@ -28,6 +29,10 @@ class _CategoryServicesScreenState extends State<CategoryServicesScreen> {
   late final List<ServiceItem> _services = List<ServiceItem>.from(
     widget.initialServices,
   );
+
+  void _sortServices() {
+    _services.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  }
 
   Future<void> _openServiceTimeline(ServiceItem service) async {
     await Navigator.of(context).push<void>(
@@ -63,6 +68,7 @@ class _CategoryServicesScreenState extends State<CategoryServicesScreen> {
       final index = _services.indexWhere((s) => s.id == service.id);
       if (index != -1) {
         _services[index] = updatedService;
+        _sortServices();
       }
     });
     widget.onServicesChanged(_services);
@@ -85,15 +91,15 @@ class _CategoryServicesScreenState extends State<CategoryServicesScreen> {
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: AppColors.surfaceHigh,
-          title: const Text('No se puede eliminar', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
-          content: const Text(
+          title: Text('No se puede eliminar', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
+          content: Text(
             'Este servicio tiene años registrados. Elimina primero todos sus años para poder borrarlo.',
             style: TextStyle(color: AppColors.inkSoft),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Entendido', style: TextStyle(color: AppColors.accent)),
+              child: Text('Entendido', style: TextStyle(color: AppColors.accent)),
             ),
           ],
         ),
@@ -105,12 +111,12 @@ class _CategoryServicesScreenState extends State<CategoryServicesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceHigh,
-        title: const Text('Eliminar servicio', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
+        title: Text('Eliminar servicio', style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.bold)),
         content: Text('¿Estás seguro de que deseas eliminar el servicio "${service.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar', style: TextStyle(color: AppColors.inkMuted)),
+            child: Text('Cancelar', style: TextStyle(color: AppColors.inkMuted)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -140,6 +146,33 @@ class _CategoryServicesScreenState extends State<CategoryServicesScreen> {
     }
   }
 
+  Future<void> _openConfigureReminders(ServiceItem service) async {
+    final updated = await showModalBottomSheet<ServiceItem>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ConfigureRemindersSheet(service: service),
+    );
+
+    if (updated != null && mounted) {
+      setState(() {
+        final index = _services.indexWhere((s) => s.id == service.id);
+        if (index != -1) {
+          _services[index] = updated;
+        }
+      });
+      widget.onServicesChanged(_services);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            duration: Duration(seconds: 3),
+            content: Text('Configuración de alertas guardada.'),
+          ),
+        );
+    }
+  }
+
   Future<void> _openCreateServiceSheet() async {
     final newService = await showModalBottomSheet<ServiceItem>(
       context: context,
@@ -163,7 +196,8 @@ class _CategoryServicesScreenState extends State<CategoryServicesScreen> {
     }
 
     setState(() {
-      _services.insert(0, newService);
+      _services.add(newService);
+      _sortServices();
     });
     widget.onServicesChanged(_services);
 
@@ -174,7 +208,7 @@ class _CategoryServicesScreenState extends State<CategoryServicesScreen> {
           duration: const Duration(seconds: 4),
           content: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.check_circle_outline,
                 color: AppColors.ink,
                 size: 20,
@@ -240,26 +274,53 @@ class _CategoryServicesScreenState extends State<CategoryServicesScreen> {
                               color: const Color(0x1A18C1B5),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
-                              Icons.play_circle_outline,
+                            child: Icon(
+                              service.billingCycle.toLowerCase().contains('quincena')
+                                  ? Icons.event_repeat_rounded
+                                  : Icons.calendar_month_rounded,
                               color: AppColors.accent,
                             ),
                           ),
-                          title: Text(
-                            service.name,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  color: AppColors.ink,
-                                  fontWeight: FontWeight.w700,
+                          title: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  service.name,
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(
+                                        color: AppColors.ink,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                 ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 6),
+                                child: Tooltip(
+                                  message: service.remindersEnabled
+                                      ? 'Alertas activadas'
+                                      : 'Alertas desactivadas',
+                                  child: Icon(
+                                    service.remindersEnabled
+                                        ? Icons.notifications_active_rounded
+                                        : Icons.notifications_off_outlined,
+                                    color: service.remindersEnabled
+                                        ? AppColors.accent
+                                        : AppColors.inkMuted,
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           subtitle: Text(
-                            '${service.type} · ${service.billingCycle}',
+                            service.billingCycle.contains('Quincena')
+                                ? 'Quincena'
+                                : service.billingCycle,
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: AppColors.inkMuted),
                           ),
                           trailing: PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert_rounded, color: AppColors.inkMuted),
+                            icon: Icon(Icons.more_vert_rounded, color: AppColors.inkMuted),
                             color: AppColors.card,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             onSelected: (value) {
@@ -267,15 +328,27 @@ class _CategoryServicesScreenState extends State<CategoryServicesScreen> {
                                 _editService(service);
                               } else if (value == 'delete') {
                                 _deleteServiceAction(service);
+                              } else if (value == 'reminders') {
+                                _openConfigureReminders(service);
                               }
                             },
                             itemBuilder: (context) => [
-                              const PopupMenuItem(
+                              PopupMenuItem(
+                                value: 'reminders',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.notifications_active_outlined, color: AppColors.ink, size: 20),
+                                    const SizedBox(width: 8),
+                                    Text('Configurar Alertas', style: TextStyle(color: AppColors.ink)),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem(
                                 value: 'edit',
                                 child: Row(
                                   children: [
                                     Icon(Icons.edit_outlined, color: AppColors.ink, size: 20),
-                                    SizedBox(width: 8),
+                                    const SizedBox(width: 8),
                                     Text('Editar', style: TextStyle(color: AppColors.ink)),
                                   ],
                                 ),
