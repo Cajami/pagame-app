@@ -49,3 +49,6 @@ app.*.map.json
 
 # Android build directory
 /android/build/
+
+# Private drafts and local personal notes
+/private_notes/
