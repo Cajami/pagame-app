@@ -40,10 +40,28 @@ Págame es una aplicación móvil que desarrollé para registrar pagos recurrent
 
 ## 🖼️ Capturas de Pantalla / Imágenes
 
-<img width="610" height="1356" alt="WhatsApp Image 2026-05-25 at 07 55 45 (2)" src="https://github.com/user-attachments/assets/c9a44325-97ee-438d-be92-0f2e6db16c1d" />
-<img width="610" height="1356" alt="WhatsApp Image 2026-05-25 at 07 55 45 (1)" src="https://github.com/user-attachments/assets/2155a865-7eea-4cae-8a68-08d7ae64f52b" />
-<img width="610" height="1356" alt="WhatsApp Image 2026-05-25 at 07 55 45" src="https://github.com/user-attachments/assets/eb87da84-afe0-4054-8998-c32980fb0afe" />
-<img width="610" height="1356" alt="WhatsApp Image 2026-05-25 at 07 55 44" src="https://github.com/user-attachments/assets/617eea6a-8810-490e-8ed6-f5ef9c27b927" />
+<a href="https://github.com/user-attachments/assets/c9a44325-97ee-438d-be92-0f2e6db16c1d" target="_blank">
+  <img src="https://github.com/user-attachments/assets/c9a44325-97ee-438d-be92-0f2e6db16c1d" width="250"/>
+</a>
+<a href="https://github.com/user-attachments/assets/9d3680e8-7392-4f76-a2c4-0f800d290f42" target="_blank">
+  <img src="https://github.com/user-attachments/assets/9d3680e8-7392-4f76-a2c4-0f800d290f42" width="250"/>
+</a>
+<a href="https://github.com/user-attachments/assets/4121c16d-99e1-4398-80ef-11bff62e8e44" target="_blank">
+  <img src="https://github.com/user-attachments/assets/4121c16d-99e1-4398-80ef-11bff62e8e44" width="250"/>
+</a>
+<a href="https://github.com/user-attachments/assets/5a76fe25-dcf1-4ea6-82ab-68218f4150db" target="_blank">
+  <img src="https://github.com/user-attachments/assets/5a76fe25-dcf1-4ea6-82ab-68218f4150db" width="250"/>
+</a>
+<a href="https://github.com/user-attachments/assets/76861025-810b-4451-949f-7d4915bf60fb" target="_blank">
+  <img src="https://github.com/user-attachments/assets/76861025-810b-4451-949f-7d4915bf60fb" width="250"/>
+</a>
+
+<a href="https://github.com/user-attachments/assets/d383817a-911e-4522-b4a6-2a3ad44b9fd7" target="_blank">
+  <img src="https://github.com/user-attachments/assets/d383817a-911e-4522-b4a6-2a3ad44b9fd7" width="250"/>
+</a>
+<a href="https://github.com/user-attachments/assets/b83f3abd-a9cd-47e8-905c-89f37675c76d" target="_blank">
+  <img src="https://github.com/user-attachments/assets/b83f3abd-a9cd-47e8-905c-89f37675c76d" width="250"/>
+</a>
 
 ---
 
