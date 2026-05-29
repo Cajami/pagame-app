@@ -1,4 +1,4 @@
-package com.pagame.app.pagame
+package com.cajami.pagame
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

@@ -8,7 +8,7 @@
 PRODUCT_NAME = pagame
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.pagame.app.pagame
+PRODUCT_BUNDLE_IDENTIFIER = com.cajami.pagame
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.pagame.app. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.cajami. All rights reserved.
