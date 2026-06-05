@@ -307,13 +307,17 @@ class DatabaseHelper {
     final List<ServiceItem> services = [];
     for (final map in maps) {
       final service = ServiceItem.fromMap(map);
-      await _loadTimelineForService(db, service);
       services.add(service);
     }
     return services;
   }
 
-  Future<void> _loadTimelineForService(Database db, ServiceItem service) async {
+  /// Loads only years and months for a specific service (Lazy Loading - no payments queried).
+  Future<void> loadTimelineForService(ServiceItem service) async {
+    final db = await database;
+    service.monthsByYear.clear();
+    service.paymentsByPeriod.clear();
+
     final List<Map<String, dynamic>> yearMaps = await db.query(
       'anios',
       where: 'servicio_id = ?',
@@ -335,13 +339,35 @@ class DatabaseHelper {
       for (final mMap in monthMaps) {
         final month = mMap['mes'] as int;
         service.monthsByYear[year]!.add(month);
-        
-        // Load in-memory payments from SQLite if needed to keep in-memory maps in sync
-        final periodKey = '$year-$month';
-        final payments = await getPaymentsForMonth(db: db, monthId: '${yearId}_$month');
-        service.paymentsByPeriod[periodKey] = payments;
       }
     }
+  }
+
+  /// Gets the registered months for a specific year ID.
+  Future<List<int>> getMonthsForYear(String yearId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'meses',
+      where: 'anio_id = ?',
+      whereArgs: [yearId],
+    );
+    return List.generate(maps.length, (i) => maps[i]['mes'] as int);
+  }
+
+  /// Gets the count of payments registered for a specific month.
+  Future<int> getPaymentCountForMonth(String monthId) async {
+    final db = await database;
+    final countList = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM pagos WHERE mes_id = ?',
+      [monthId],
+    );
+    return Sqflite.firstIntValue(countList) ?? 0;
+  }
+
+  /// Checks if a specific month has payments registered.
+  Future<bool> hasPaymentsForMonth(String monthId) async {
+    final count = await getPaymentCountForMonth(monthId);
+    return count > 0;
   }
 
   // --- YEARS AND MONTHS CRUD ---
@@ -413,7 +439,7 @@ class DatabaseHelper {
       return PaymentRecord(
         id: maps[i]['id'] as String,
         status: maps[i]['estado'] as String,
-        amount: maps[i]['monto'] as double?,
+        amount: maps[i]['monto'] != null ? (maps[i]['monto'] as num).toDouble() : null,
         paymentDate: DateTime.parse(dateStr),
         notes: maps[i]['notas'] as String?,
         attachments: adjuntos,

@@ -3,9 +3,10 @@ import 'package:pagame/models/category_item.dart';
 import 'package:pagame/theme/app_colors.dart';
 
 class CreateCategorySheet extends StatefulWidget {
-  const CreateCategorySheet({super.key, this.categoryToEdit});
+  const CreateCategorySheet({super.key, this.categoryToEdit, this.existingCategories = const []});
 
   final CategoryItem? categoryToEdit;
+  final List<CategoryItem> existingCategories;
 
   @override
   State<CreateCategorySheet> createState() => _CreateCategorySheetState();
@@ -140,8 +141,22 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
                       if (value == null || value.trim().isEmpty) {
                         return 'El nombre es obligatorio';
                       }
+                      if (value.trim().length < 3) {
+                        return 'Mínimo 3 caracteres';
+                      }
                       if (value.trim().length > 20) {
                         return 'El nombre no puede exceder los 20 caracteres';
+                      }
+                      final name = value.trim();
+                      final capitalizedName = name.isNotEmpty ? '${name[0].toUpperCase()}${name.substring(1)}' : name;
+                      final exists = widget.existingCategories.any((cat) {
+                        if (widget.categoryToEdit != null && cat.id == widget.categoryToEdit!.id) {
+                          return false;
+                        }
+                        return cat.name.toLowerCase() == capitalizedName.toLowerCase();
+                      });
+                      if (exists) {
+                        return 'Nombre ya registrado';
                       }
                       return null;
                     },

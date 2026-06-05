@@ -22,11 +22,39 @@ class YearMonthsScreen extends StatefulWidget {
 }
 
 class _YearMonthsScreenState extends State<YearMonthsScreen> {
-  List<int> get _months {
-    final values =
-        (widget.service.monthsByYear[widget.year] ?? <int>{}).toList()
-          ..sort((a, b) => b.compareTo(a));
-    return values;
+  List<int> _months = [];
+  Map<int, int> _paymentCounts = {};
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMonthsData();
+  }
+
+  Future<void> _loadMonthsData() async {
+    setState(() => _isLoading = true);
+    try {
+      final yearId = '${widget.service.id}_${widget.year}';
+      final dbMonths = await DatabaseHelper.instance.getMonthsForYear(yearId);
+      final Map<int, int> counts = {};
+      for (final month in dbMonths) {
+        final monthId = '${yearId}_$month';
+        counts[month] = await DatabaseHelper.instance.getPaymentCountForMonth(monthId);
+      }
+      if (mounted) {
+        setState(() {
+          _months = dbMonths..sort((a, b) => b.compareTo(a));
+          _paymentCounts = counts;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading months data: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _showInfoMessage(String message) {
@@ -47,13 +75,12 @@ class _YearMonthsScreenState extends State<YearMonthsScreen> {
   }
 
   Future<void> _createMonth() async {
-    final monthSet = widget.service.monthsByYear[widget.year] ?? <int>{};
-    final selectedMonth = await showMonthPicker(context, existingMonths: monthSet.toList());
+    final selectedMonth = await showMonthPicker(context, existingMonths: _months);
     if (!mounted || selectedMonth == null) {
       return;
     }
 
-    if (monthSet.contains(selectedMonth)) {
+    if (_months.contains(selectedMonth)) {
       _showInfoMessage('El mes ${monthName(selectedMonth)} ya existe.');
       return;
     }
@@ -66,10 +93,7 @@ class _YearMonthsScreenState extends State<YearMonthsScreen> {
       await DatabaseHelper.instance.insertYear(yearId, widget.service.id, widget.year);
       await DatabaseHelper.instance.insertMonth(monthId, yearId, selectedMonth);
 
-      setState(() {
-        monthSet.add(selectedMonth);
-        widget.service.monthsByYear[widget.year] = monthSet;
-      });
+      await _loadMonthsData();
       _showInfoMessage('Mes ${monthName(selectedMonth)} creado.');
     } catch (e, stackTrace) {
       debugPrint('Error creating month: $e');
@@ -90,14 +114,15 @@ class _YearMonthsScreenState extends State<YearMonthsScreen> {
     );
 
     if (mounted) {
-      setState(() {});
+      _loadMonthsData();
     }
   }
 
   Future<void> _deleteMonthAction(int month) async {
-    final periodKey = '${widget.year}-$month';
-    final payments = widget.service.paymentsByPeriod[periodKey] ?? [];
-    if (payments.isNotEmpty) {
+    final monthId = '${widget.service.id}_${widget.year}_$month';
+    final hasPayments = await DatabaseHelper.instance.hasPaymentsForMonth(monthId);
+    if (hasPayments) {
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -118,6 +143,7 @@ class _YearMonthsScreenState extends State<YearMonthsScreen> {
       return;
     }
 
+    if (!mounted) return;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -139,22 +165,14 @@ class _YearMonthsScreenState extends State<YearMonthsScreen> {
     );
 
     if (confirm == true) {
-      final monthId = '${widget.service.id}_${widget.year}_$month';
       await DatabaseHelper.instance.deleteMonth(monthId);
-      setState(() {
-        final monthSet = widget.service.monthsByYear[widget.year] ?? <int>{};
-        monthSet.remove(month);
-        widget.service.monthsByYear[widget.year] = monthSet;
-        widget.service.paymentsByPeriod.remove(periodKey);
-      });
+      await _loadMonthsData();
       _showInfoMessage('Mes de ${monthName(month)} eliminado.');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final months = _months;
-
     return Scaffold(
       appBar: AppBar(
         flexibleSpace: const HeaderBackground(),
@@ -179,7 +197,7 @@ class _YearMonthsScreenState extends State<YearMonthsScreen> {
           ),
         ],
       ),
-      floatingActionButton: months.isNotEmpty
+      floatingActionButton: _months.isNotEmpty
           ? FloatingActionButton.extended(
               onPressed: _createMonth,
               icon: const Icon(Icons.add),
@@ -189,88 +207,88 @@ class _YearMonthsScreenState extends State<YearMonthsScreen> {
       body: Stack(
         children: [
           const AppBackground(),
-          months.isEmpty
-              ? _MonthsEmptyState(onCreateMonth: _createMonth)
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 110),
-                  itemCount: months.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    final month = months[index];
-                    final periodKey = '${widget.year}-$month';
-                    final paymentCount =
-                        widget.service.paymentsByPeriod[periodKey]?.length ?? 0;
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.card,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.border),
-                        boxShadow: AppColors.cardShadow,
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
-                        child: ListTile(
-                          onTap: () => _openMonthPayments(month),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          leading: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: const Color(0x1A18C1B5),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.event_note_outlined,
-                              color: AppColors.accent,
-                            ),
-                          ),
-                          title: Text(
-                            monthName(month),
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  color: AppColors.ink,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
-                          subtitle: Text(
-                            paymentCount == 0
-                                ? 'Sin pagos registrados'
-                                : '$paymentCount pago${paymentCount == 1 ? '' : 's'} registrados',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: AppColors.inkMuted),
-                          ),
-                           trailing: PopupMenuButton<String>(
-                            icon: Icon(Icons.more_vert_rounded, color: AppColors.inkMuted),
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _months.isEmpty
+                  ? _MonthsEmptyState(onCreateMonth: _createMonth)
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 110),
+                      itemCount: _months.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final month = _months[index];
+                        final paymentCount = _paymentCounts[month] ?? 0;
+                        return Container(
+                          decoration: BoxDecoration(
                             color: AppColors.card,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                            onSelected: (value) {
-                              if (value == 'delete') {
-                                _deleteMonthAction(month);
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-                                    SizedBox(width: 8),
-                                    Text('Eliminar', style: TextStyle(color: Colors.redAccent)),
-                                  ],
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.border),
+                            boxShadow: AppColors.cardShadow,
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(20),
+                            child: ListTile(
+                              onTap: () => _openMonthPayments(month),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              leading: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: const Color(0x1A18C1B5),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.event_note_outlined,
+                                  color: AppColors.accent,
                                 ),
                               ),
-                            ],
+                              title: Text(
+                                monthName(month),
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: AppColors.ink,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                              subtitle: Text(
+                                paymentCount == 0
+                                    ? 'Sin pagos registrados'
+                                    : '$paymentCount pago${paymentCount == 1 ? '' : 's'} registrados',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: AppColors.inkMuted),
+                              ),
+                              trailing: PopupMenuButton<String>(
+                                icon: Icon(Icons.more_vert_rounded, color: AppColors.inkMuted),
+                                color: AppColors.card,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                onSelected: (value) {
+                                  if (value == 'delete') {
+                                    _deleteMonthAction(month);
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                                        SizedBox(width: 8),
+                                        Text('Eliminar', style: TextStyle(color: Colors.redAccent)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                        );
+                      },
+                    ),
         ],
       ),
     );

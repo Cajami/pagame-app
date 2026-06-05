@@ -18,11 +18,25 @@ class ServiceTimelineScreen extends StatefulWidget {
 
 class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
   late ServiceItem _currentService;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _currentService = widget.service;
+    _loadTimeline();
+  }
+
+  Future<void> _loadTimeline() async {
+    setState(() => _isLoading = true);
+    try {
+      await DatabaseHelper.instance.loadTimelineForService(_currentService);
+    } catch (e) {
+      debugPrint('Error loading timeline: $e');
+    }
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   List<int> get _years {
@@ -61,10 +75,7 @@ class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
 
     final yearId = '${_currentService.id}_$selectedYear';
     await DatabaseHelper.instance.insertYear(yearId, _currentService.id, selectedYear);
-
-    setState(() {
-      _currentService.monthsByYear[selectedYear] = <int>{};
-    });
+    await _loadTimeline();
     _showInfoMessage('Año $selectedYear creado.');
   }
 
@@ -76,7 +87,7 @@ class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
       ),
     );
     if (mounted) {
-      setState(() {});
+      _loadTimeline();
     }
   }
 
@@ -126,9 +137,7 @@ class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
     if (confirm == true) {
       final yearId = '${_currentService.id}_$year';
       await DatabaseHelper.instance.deleteYear(yearId);
-      setState(() {
-        _currentService.monthsByYear.remove(year);
-      });
+      await _loadTimeline();
       _showInfoMessage('Año $year eliminado.');
     }
   }
@@ -161,9 +170,11 @@ class _ServiceTimelineScreenState extends State<ServiceTimelineScreen> {
       body: Stack(
         children: [
           const AppBackground(),
-          years.isEmpty
-              ? _YearsEmptyState(onCreateYear: _createYear)
-              : ListView.separated(
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : years.isEmpty
+                  ? _YearsEmptyState(onCreateYear: _createYear)
+                  : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(18, 12, 18, 110),
                   itemCount: years.length,
                   separatorBuilder: (context, index) =>

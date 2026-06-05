@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:pagame/screens/categories/categories_screen.dart';
 import 'package:pagame/theme/app_colors.dart';
 import 'package:pagame/theme/app_theme.dart';
@@ -54,6 +55,16 @@ class PagameAppState extends State<PagameApp> {
     if (!_initialized) {
       return const MaterialApp(
         debugShowCheckedModeBanner: false,
+        localizationsDelegates: [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [
+          Locale('es', 'ES'),
+          Locale('en', 'US'),
+        ],
+        locale: Locale('es', 'ES'),
         home: Scaffold(
           body: Center(
             child: CircularProgressIndicator(),
@@ -66,6 +77,16 @@ class PagameAppState extends State<PagameApp> {
       debugShowCheckedModeBanner: false,
       title: 'Pagame',
       theme: AppColors.isDark ? AppTheme.darkTheme() : AppTheme.lightTheme(),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('es', 'ES'),
+        Locale('en', 'US'),
+      ],
+      locale: const Locale('es', 'ES'),
       home: const SecurityGuard(
         child: CategoriesScreen(),
       ),

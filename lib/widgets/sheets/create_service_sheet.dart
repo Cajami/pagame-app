@@ -145,6 +145,9 @@ class _CreateServiceSheetState extends State<CreateServiceSheet> {
                         return 'El nombre del servicio es obligatorio';
                       }
                       final name = value.trim();
+                      if (name.length < 3) {
+                        return 'Mínimo 3 caracteres';
+                      }
                       if (name.length > 20) {
                         return 'El nombre no puede exceder los 20 caracteres';
                       }
@@ -156,7 +159,7 @@ class _CreateServiceSheetState extends State<CreateServiceSheet> {
                         return s.name.toLowerCase() == capitalizedName.toLowerCase();
                       });
                       if (exists) {
-                        return 'Ya existe un servicio con el nombre "$capitalizedName"';
+                        return 'Nombre ya registrado';
                       }
                       return null;
                     },

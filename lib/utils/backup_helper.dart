@@ -238,7 +238,7 @@ class BackupHelper {
           final sanitizedRow = {
             'id': row['id'] as String,
             'mes_id': row['mes_id'] as String? ?? '',
-            'monto': row['monto'] as double?,
+            'monto': row['monto'] != null ? (row['monto'] as num).toDouble() : null,
             'estado': row['estado'] as String? ?? 'Pagado',
             'fecha_pago': row['fecha_pago'] as String? ?? DateTime.now().toIso8601String(),
             'notas': row['notas'] as String?,

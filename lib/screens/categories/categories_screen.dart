@@ -109,7 +109,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const CreateCategorySheet(),
+      builder: (context) => CreateCategorySheet(existingCategories: _categories),
     );
 
     if (!mounted) {
@@ -154,7 +154,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CreateCategorySheet(categoryToEdit: category),
+      builder: (context) => CreateCategorySheet(categoryToEdit: category, existingCategories: _categories),
     );
 
     if (!mounted || updatedCategory == null) {

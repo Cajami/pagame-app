@@ -42,9 +42,14 @@ graph TD
     1. **NO generar el APK de producción** (para ahorrar tiempo, recursos y evitar desgaste innecesario).
     2. **Subir los cambios** directamente a GitHub usando comandos git.
 
+* **Regla de Desarrollo Local**: Mientras se esté desarrollando y probando localmente, **está estrictamente prohibido compilar el APK de producción en la carpeta release**. Para probar la aplicación en el móvil, únicamente se debe compilar y desplegar lo estrictamente necesario para la prueba rápida en desarrollo (por ejemplo, mediante `flutter install` o `flutter run` en modo normal sin compilar para release).
+
 ### 3. Prohibición Absoluta de Acciones Git y Push sin Autorización
 * **Regla**: El agente de IA **tiene prohibido por completo** ejecutar comandos Git de modificación local (`git add`, `git commit`, `git checkout`, `git reset`) o comandos remotos (`git push`, `git pull` con fusión) por iniciativa propia.
 * **Excepción**: Solo se podrán ejecutar estas operaciones **cuando el usuario lo indique explícitamente** en su solicitud. De lo contrario, los cambios de código e interfaz deben permanecer únicamente como archivos modificados en el directorio de trabajo local para la revisión del usuario.
+
+### 4. Compilación de Paquetes App Bundle (.aab)
+* **Regla**: El agente **no debe generar el archivo .aab** de producción bajo ninguna circunstancia a menos que el usuario lo solicite de manera **explícita**. Esta solicitud usualmente se realizará cuando ya se hayan completado y subido todos los cambios técnicos a la rama principal.
 
 ---
 
