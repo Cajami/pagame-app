@@ -536,7 +536,7 @@ class _MainHeader extends StatelessWidget {
               top: 16,
               right: 20,
               child: Text(
-                'v1.0',
+                'v1.0.1',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.55),
                   fontSize: 12,
