@@ -6,7 +6,7 @@ Págame es una aplicación móvil que desarrollé para registrar pagos recurrent
 
 ¡Págame ya está disponible de forma oficial en la Google Play Store! Puedes instalarla de manera rápida y segura directamente desde la tienda:
 
-<a href="https://play.google.com/store/apps/details?id=com.cajami.pagame">
+<a href="https://play.google.com/store/apps/details?id=com.cajami.pagame" target="_blank" rel="noopener noreferrer">
   <img alt="Disponible en Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/es_badge_web_generic.png" height="75"/>
 </a>
 
