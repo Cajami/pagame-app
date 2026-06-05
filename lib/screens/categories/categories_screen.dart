@@ -481,7 +481,11 @@ class _CategoriesListState extends StatelessWidget {
                 color: AppColors.card,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 onSelected: (value) {
-                  onEditCategory(category);
+                  if (value == 'edit') {
+                    onEditCategory(category);
+                  } else if (value == 'delete') {
+                    onDeleteCategory(category);
+                  }
                 },
                 itemBuilder: (context) => [
                   PopupMenuItem(
