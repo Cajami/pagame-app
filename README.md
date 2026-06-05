@@ -2,19 +2,21 @@
 
 Págame es una aplicación móvil que desarrollé para registrar pagos recurrentes y únicos, adjuntar comprobantes físicos y gestionar recordatorios de fechas de vencimiento.
 
-## 📱 Descarga e Instala en tu Android (Prueba Rápida)
+## 📱 Descarga e Instalación en Android
 
-¡Ya puedes probar la versión de producción directamente en tu teléfono Android! Preparé el instalador APK optimizado y listo para usar:
+¡Págame ya está disponible de forma oficial en la Google Play Store! Puedes instalarla de manera rápida y segura directamente desde la tienda:
 
-1. **Descarga el archivo APK**:
-   👉 [**Descargar Págame APK (Última Versión)**](release/pagame.apk?raw=true)
-   *(O navega a la carpeta [release/pagame.apk](release/pagame.apk) y haz clic en el botón "Download")*
+<a href="https://play.google.com/store/apps/details?id=com.cajami.pagame">
+  <img alt="Disponible en Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/es_badge_web_generic.png" height="75"/>
+</a>
 
-2. **Instalación en tu móvil**:
-   * Descarga el archivo `.apk` directamente en tu celular Android.
-   * Abre el archivo descargado. Android te mostrará una advertencia de seguridad estándar sobre *"Instalar aplicaciones de fuentes desconocidas"*.
-   * Simplemente ve a la configuración de la advertencia, selecciona **"Permitir desde esta fuente"** y presiona **Instalar**.
-   * ¡Y listo! La aplicación se instalará en tu pantalla de inicio con todas sus funcionalidades de seguridad local por huella, adjuntos de archivos y copias de seguridad ZIP locales.
+---
+
+### 📦 Alternativa de Descarga Directa (APK)
+Si prefieres no usar la tienda de Google o tienes un dispositivo sin servicios de Google (como Huawei), puedes descargar e instalar directamente nuestro instalador oficial compilado:
+
+* 👉 [**Descargar Págame APK (Última Versión)**](release/pagame.apk?raw=true)
+* *Nota de instalación:* Al abrir el archivo `.apk` descargado, Android te mostrará una advertencia de seguridad estándar sobre la instalación de fuentes desconocidas. Simplemente selecciona "Permitir desde esta fuente" para completar la instalación en tu pantalla de inicio en segundos.
 
 ---
 
