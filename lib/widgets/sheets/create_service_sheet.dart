@@ -8,10 +8,12 @@ class CreateServiceSheet extends StatefulWidget {
     super.key,
     required this.categoryId,
     this.serviceToEdit,
+    this.existingServices = const [],
   });
 
   final String categoryId;
   final ServiceItem? serviceToEdit;
+  final List<ServiceItem> existingServices;
 
   @override
   State<CreateServiceSheet> createState() => _CreateServiceSheetState();
@@ -112,22 +114,49 @@ class _CreateServiceSheetState extends State<CreateServiceSheet> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Ejemplo: Prime Video',
+                    'Ejemplo: Prime Video, Agua, Luz, YouTube Premium, etc.',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(
                       context,
                     ).textTheme.bodyMedium?.copyWith(color: AppColors.inkSoft),
                   ),
                   const SizedBox(height: 20),
-                  TextFormField(
+                   TextFormField(
                     controller: _nameController,
                     textInputAction: TextInputAction.next,
                     textCapitalization: TextCapitalization.sentences,
+                    maxLength: 20,
+                    buildCounter: (context, {required currentLength, required isFocused, maxLength}) {
+                      return Text(
+                        '$currentLength de $maxLength',
+                        style: TextStyle(
+                          color: AppColors.inkMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      );
+                    },
                     decoration: const InputDecoration(
                       labelText: 'Nombre del servicio',
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'El nombre del servicio es obligatorio';
+                      }
+                      final name = value.trim();
+                      if (name.length > 20) {
+                        return 'El nombre no puede exceder los 20 caracteres';
+                      }
+                      final capitalizedName = name.isNotEmpty ? '${name[0].toUpperCase()}${name.substring(1)}' : name;
+                      final exists = widget.existingServices.any((s) {
+                        if (widget.serviceToEdit != null && s.id == widget.serviceToEdit!.id) {
+                          return false;
+                        }
+                        return s.name.toLowerCase() == capitalizedName.toLowerCase();
+                      });
+                      if (exists) {
+                        return 'Ya existe un servicio con el nombre "$capitalizedName"';
                       }
                       return null;
                     },

@@ -112,22 +112,36 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Organiza tus servicios con nombre, icono y color.',
+                    'Organiza tus servicios con nombre e icono.',
                     style: Theme.of(
                       context,
                     ).textTheme.bodyMedium?.copyWith(color: AppColors.inkSoft),
                   ),
                   const SizedBox(height: 20),
-                  TextFormField(
+                   TextFormField(
                     controller: _nameController,
                     textInputAction: TextInputAction.done,
                     textCapitalization: TextCapitalization.sentences,
+                    maxLength: 20,
+                    buildCounter: (context, {required currentLength, required isFocused, maxLength}) {
+                      return Text(
+                        '$currentLength de $maxLength',
+                        style: TextStyle(
+                          color: AppColors.inkMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      );
+                    },
                     decoration: const InputDecoration(
                       labelText: 'Nombre de la categoría',
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'El nombre es obligatorio';
+                      }
+                      if (value.trim().length > 20) {
+                        return 'El nombre no puede exceder los 20 caracteres';
                       }
                       return null;
                     },

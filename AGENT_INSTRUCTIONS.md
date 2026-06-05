@@ -42,6 +42,10 @@ graph TD
     1. **NO generar el APK de producción** (para ahorrar tiempo, recursos y evitar desgaste innecesario).
     2. **Subir los cambios** directamente a GitHub usando comandos git.
 
+### 3. Prohibición Absoluta de Acciones Git y Push sin Autorización
+* **Regla**: El agente de IA **tiene prohibido por completo** ejecutar comandos Git de modificación local (`git add`, `git commit`, `git checkout`, `git reset`) o comandos remotos (`git push`, `git pull` con fusión) por iniciativa propia.
+* **Excepción**: Solo se podrán ejecutar estas operaciones **cuando el usuario lo indique explícitamente** en su solicitud. De lo contrario, los cambios de código e interfaz deben permanecer únicamente como archivos modificados en el directorio de trabajo local para la revisión del usuario.
+
 ---
 
 ## 🛠️ FLUJO DE TRABAJO DEL AGENTE

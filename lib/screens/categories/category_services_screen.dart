@@ -55,6 +55,7 @@ class _CategoryServicesScreenState extends State<CategoryServicesScreen> {
       builder: (context) => CreateServiceSheet(
         categoryId: widget.category.id,
         serviceToEdit: service,
+        existingServices: _services,
       ),
     );
 
@@ -178,7 +179,10 @@ class _CategoryServicesScreenState extends State<CategoryServicesScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => CreateServiceSheet(categoryId: widget.category.id),
+      builder: (context) => CreateServiceSheet(
+        categoryId: widget.category.id,
+        existingServices: _services,
+      ),
     );
 
     if (!mounted) {
